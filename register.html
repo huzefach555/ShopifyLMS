@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Register as a student for the Shopify Crash Course Institute." />
+    <title>Student Registration</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./css/styles.css" />
+    <style>
+      body{background:radial-gradient(circle at top left,rgba(109,74,255,0.16),transparent 32%),var(--bg)}
+      .reg-shell{min-height:100vh;display:grid;place-items:center;padding:2rem 1rem}
+      .reg-card{width:min(980px,100%);display:grid;grid-template-columns:1fr 1fr;gap:0;overflow:hidden;border-radius:32px;box-shadow:var(--shadow);border:1px solid var(--border)}
+      .reg-side{padding:2rem;background:linear-gradient(135deg,rgba(109,74,255,.16),rgba(36,183,167,.08));display:flex;flex-direction:column;justify-content:space-between;gap:1rem}
+      .reg-side h1{font-size:clamp(1.6rem,2.4vw,2.3rem);margin:0 0 .4rem}
+      .reg-side p{margin:0;color:var(--muted);line-height:1.7}
+      .reg-form{padding:2rem;background:var(--surface);backdrop-filter:blur(14px)}
+      .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem}
+      .form-grid .full{grid-column:1/-1}
+      .field{display:grid;gap:.35rem}
+      .field span{font-size:.9rem;font-weight:600;color:var(--muted)}
+      .field input,.field select{width:100%;padding:.84rem .95rem;border:1px solid var(--border);border-radius:14px;background:var(--surface-strong);color:var(--text)}
+      .field small{color:#ca2f5d;font-size:.8rem;min-height:1rem}
+      .reg-actions{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-top:1rem;flex-wrap:wrap}
+      .hint{color:var(--muted);font-size:.92rem}
+      @media (max-width:860px){.reg-card{grid-template-columns:1fr}.reg-side{order:2}.reg-form{order:1}}
+      @media (max-width:640px){.form-grid{grid-template-columns:1fr}.reg-form,.reg-side{padding:1.2rem}}
+    </style>
+  </head>
+  <body>
+    <div class="reg-shell">
+      <div class="reg-card">
+        <div class="reg-side">
+          <div>
+            <span class="pill">Student Enrollment</span>
+            <h1>Create your student profile.</h1>
+            <p>Join the Shopify Crash Course Institute and start your premium learning journey.</p>
+          </div>
+          <a class="btn btn-secondary" href="./index.html">Back to Home</a>
+        </div>
+        <form class="reg-form" id="studentForm">
+          <div class="form-grid">
+            <label class="field full"><span>Full Name</span><input name="fullName" required /></label>
+            <label class="field full"><span>Father Name</span><input name="fatherName" required /></label>
+            <label class="field"><span>Email</span><input name="email" type="email" required /></label>
+            <label class="field"><span>Phone</span><input name="phone" required /></label>
+            <label class="field"><span>WhatsApp</span><input name="whatsapp" required /></label>
+            <label class="field"><span>City</span><input name="city" required /></label>
+            <label class="field"><span>Country</span><input name="country" required /></label>
+            <label class="field"><span>Age</span><input name="age" type="number" min="12" max="80" required /></label>
+            <label class="field"><span>Gender</span><select name="gender" required><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select></label>
+            <label class="field"><span>Course</span><select name="course" required><option value="">Select</option><option>Shopify Basics</option><option>Store Setup Mastery</option><option>Conversion Growth</option></select></label>
+            <label class="field"><span>Learning Mode</span><select name="learningMode" required><option value="">Select</option><option>Physical</option><option>Online</option></select></label>
+            <label class="field"><span>Password</span><input name="password" type="password" required /></label>
+            <label class="field"><span>Confirm Password</span><input name="confirmPassword" type="password" required /></label>
+            <label class="field full"><span>Profile Photo</span><input name="photo" type="file" accept="image/*" /></label>
+            <div class="field full"><small id="formMessage"></small></div>
+          </div>
+          <div class="reg-actions">
+            <span class="hint">Firebase-ready structure.</span>
+            <button class="btn btn-primary" type="submit">Register</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <script type="module" src="./js/register.js"></script>
+  </body>
+</html>

@@ -1,0 +1,46 @@
+{
+  "rules": {
+    "students": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid == $uid || root.child('admins').child(auth.uid).exists())",
+        ".write": "auth != null && (auth.uid == $uid || root.child('admins').child(auth.uid).exists())"
+      }
+    },
+    "payments": {
+      "$docId": {
+        ".read": "auth != null && (resource.data.studentId == auth.uid || root.child('admins').child(auth.uid).exists())",
+        ".write": "auth != null && (resource.data.studentId == auth.uid || root.child('admins').child(auth.uid).exists())"
+      }
+    },
+    "tasks": {
+      "$docId": {
+        ".read": "auth != null && (resource.data.teacherId == auth.uid || resource.data.assignedTo == auth.uid || resource.data.assignedTo == 'all')",
+        ".write": "auth != null && (resource.exists() ? resource.data.teacherId == auth.uid : true)"
+      }
+    },
+    "meetingLinks": {
+      "$docId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "resources": {
+      "$docId": {
+        ".read": "auth != null",
+        ".write": "auth != null && (root.child('admins').child(auth.uid).exists() || root.child('teachers').child(auth.uid).exists())"
+      }
+    },
+    "assignments": {
+      "$docId": {
+        ".read": "auth != null",
+        ".write": "auth != null && (root.child('admins').child(auth.uid).exists() || root.child('teachers').child(auth.uid).exists())"
+      }
+    },
+    "admins": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    }
+  }
+}

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login</title>
+    <link rel="stylesheet" href="./css/styles.css" />
+    <style>
+      body{display:grid;place-items:center;min-height:100vh;padding:1rem;background:radial-gradient(circle at top left,rgba(109,74,255,0.16),transparent 30%),var(--bg)}
+      .auth-card{width:min(460px,100%);padding:2rem;border-radius:28px;background:var(--surface);backdrop-filter:blur(16px);border:1px solid var(--border);box-shadow:var(--shadow)}
+      .auth-card h1{margin-top:0}.field{display:grid;gap:.35rem;margin-bottom:.9rem}.field input,.field select{width:100%;padding:.84rem .95rem;border:1px solid var(--border);border-radius:14px;background:var(--surface-strong);color:var(--text)}.actions{display:flex;justify-content:space-between;align-items:center;gap:.8rem;flex-wrap:wrap}.msg{min-height:1rem;margin-top:.8rem;color:#ca2f5d;font-size:.92rem}
+    </style>
+  </head>
+  <body>
+    <div class="auth-card">
+      <h1>Sign In</h1>
+      <form id="loginForm">
+        <label class="field"><span>Email</span><input name="email" type="email" required /></label>
+        <label class="field"><span>Password</span><input name="password" type="password" required /></label>
+        <label class="field"><span>Role</span><select name="role"><option value="student">Student</option><option value="teacher">Teacher</option><option value="admin">Admin</option></select></label>
+        <div class="actions"><button class="btn btn-primary" type="submit">Login</button><a href="./register.html">Create account</a></div>
+      </form>
+      <div class="msg" id="msg" aria-live="polite"></div>
+      <button type="button" class="btn btn-secondary" id="resetLink">Reset password</button>
+    </div>
+    <script type="module" src="./js/login.js"></script>
+  </body>
+</html>

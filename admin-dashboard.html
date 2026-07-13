@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./css/styles.css" />
+    <style>
+      body{background:radial-gradient(circle at top left,rgba(109,74,255,0.16),transparent 28%),var(--bg)}
+      .dashboard-shell{min-height:100vh;display:grid;grid-template-columns:280px 1fr;padding:1rem;gap:1rem}
+      .sidebar,.main-panel{background:var(--surface);backdrop-filter:blur(16px);border:1px solid var(--border);box-shadow:var(--shadow);border-radius:28px}
+      .sidebar{padding:1.2rem;display:flex;flex-direction:column;gap:1rem}
+      .nav-list{display:grid;gap:.4rem}
+      .nav-item{display:flex;align-items:center;justify-content:space-between;padding:.82rem .95rem;border-radius:16px;color:var(--muted);cursor:pointer;transition:all .2s ease}
+      .nav-item.active,.nav-item:hover{background:var(--surface-strong);color:var(--text)}
+      .main-panel{padding:1.2rem;display:flex;flex-direction:column;gap:1rem}
+      .topbar{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
+      .hero-card{display:grid;grid-template-columns:1.2fr .8fr;gap:1rem;padding:1.1rem;border-radius:24px;background:linear-gradient(135deg,rgba(109,74,255,.15),rgba(36,183,167,.14));border:1px solid var(--border)}
+      .stats-grid,.grid-2{display:grid;gap:1rem}.stats-grid{grid-template-columns:repeat(4,1fr)}.grid-2{grid-template-columns:repeat(2,1fr)}
+      .card{padding:1rem;border-radius:22px;background:var(--surface-strong);border:1px solid var(--border)}
+      .pill{display:inline-flex;padding:.35rem .7rem;border-radius:999px;background:rgba(109,74,255,.12);color:var(--primary);font-size:.8rem;font-weight:700}
+      .muted{color:var(--muted)}
+      .list{display:grid;gap:.7rem}.item{display:flex;justify-content:space-between;align-items:center;padding:.7rem 0;border-bottom:1px solid var(--border)}.item:last-child{border-bottom:0}
+      .badge{display:inline-flex;padding:.35rem .65rem;border-radius:999px;background:var(--surface);color:var(--primary);font-size:.8rem}
+      .approval-list{display:grid;gap:.8rem}
+      .approval-item{padding:1rem;border:1px solid var(--border);border-radius:20px;background:var(--surface-strong)}
+      .approval-meta{display:flex;justify-content:space-between;gap:1rem;align-items:center;flex-wrap:wrap}
+      .approval-actions{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+      .status-chip{display:inline-flex;padding:.35rem .7rem;border-radius:999px;font-size:.8rem;font-weight:700}
+      .status-chip.pending{background:rgba(255,180,0,.14);color:#996100}
+      .status-chip.approved{background:rgba(31,157,115,.14);color:#1f9d73}
+      .status-chip.rejected{background:rgba(194,59,59,.14);color:#c23b3b}
+      .status-select{padding:.5rem .7rem;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text)}
+      .action-btn{padding:.5rem .75rem;border:none;border-radius:999px;cursor:pointer;font-weight:700}
+      .action-btn.approve{background:rgba(31,157,115,.14);color:#1f9d73}
+      .action-btn.reject{background:rgba(194,59,59,.14);color:#c23b3b}
+      .approval-footer{margin-top:.8rem}
+      .approval-photo{display:block;max-width:220px;max-height:180px;object-fit:cover;border-radius:16px;border:1px solid var(--border)}
+      .payment-card.empty{color:var(--muted)}
+      .approval-header{display:flex;justify-content:space-between;gap:1rem;align-items:center;flex-wrap:wrap;margin-bottom:.8rem}
+      .approval-summary{display:flex;gap:.5rem;flex-wrap:wrap}
+      .summary-pill{display:inline-flex;padding:.35rem .7rem;border-radius:999px;background:var(--surface);color:var(--text);font-size:.82rem}
+      @media (max-width:980px){.dashboard-shell{grid-template-columns:1fr}.sidebar{order:2}}@media (max-width:720px){.stats-grid,.grid-2,.hero-card{grid-template-columns:1fr}}
+    </style>
+  </head>
+  <body>
+    <div class="dashboard-shell">
+      <aside class="sidebar">
+        <a class="brand" href="./index.html"><span class="brand-mark">A</span><span>Admin Hub</span></a>
+        <div class="nav-list" id="navList"></div>
+        <div class="card">
+          <h3>System Status</h3>
+          <p class="muted">All systems online</p>
+        </div>
+      </aside>
+      <main class="main-panel">
+        <div class="topbar">
+          <div>
+            <span class="pill">Admin Dashboard</span>
+            <h2 id="pageTitle">Dashboard</h2>
+          </div>
+          <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">☀</button>
+        </div>
+        <section class="hero-card">
+          <div>
+            <h3>Welcome, Admin</h3>
+            <p class="muted">Monitor students, teachers, approvals, payments, and course operations from one premium dashboard.</p>
+          </div>
+          <div class="card">
+            <strong>Operations Snapshot</strong>
+            <p class="muted">42 students • 9 teachers • 6 pending approvals</p>
+          </div>
+        </section>
+        <section class="stats-grid" id="statsGrid"></section>
+        <section id="contentArea"></section>
+      </main>
+    </div>
+    <script type="module">
+      import { protect } from './js/protected.js';
+      import { authLogout, initAuth } from './js/auth.js';
+      await initAuth();
+      protect('admin');
+      document.addEventListener('click', async (event) => {
+        const target = event.target.closest('[data-id="logout"]');
+        if (!target) return;
+        await authLogout();
+        window.location.href = './login.html';
+      });
+    </script>
+    <script type="module" src="./js/admin-dashboard.js"></script>
+  </body>
+</html>
