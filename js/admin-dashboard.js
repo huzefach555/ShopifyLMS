@@ -7,6 +7,7 @@ const navItems = [
   { id: 'approve', label: 'Approve Students', icon: '✓' },
   { id: 'reject', label: 'Reject Students', icon: '✕' },
   { id: 'payment', label: 'Payment Verification', icon: '💳' },
+  { id: 'assignments', label: 'Assignments', icon: '📝' },
   { id: 'announcements', label: 'Announcements', icon: '⚡' },
   { id: 'meetings', label: 'Meeting Links', icon: '↗' }
 ];
@@ -589,6 +590,134 @@ function renderMeetingsContent() {
   loadMeetings();
 }
 
+let assignments = [];
+let assignmentsUnsub = null;
+
+async function initAssignmentsListener() {
+  try { if (assignmentsUnsub) assignmentsUnsub(); } catch (e) {}
+  assignmentsUnsub = await listenDocs('assignments', [], (docs) => {
+    assignments = docs || [];
+    if (currentPage === 'assignments') renderAssignmentsContent();
+  });
+}
+
+async function renderAssignmentsContent() {
+  if (!assignmentsUnsub) await initAssignmentsListener();
+  
+  contentArea.innerHTML = `
+    <div class="card">
+      <div class="table-header">
+        <div class="table-title">Assignments</div>
+        <button class="btn btn-primary" id="createAssignmentBtn">+ New Assignment</button>
+      </div>
+      <div id="assignmentsList" style="display: flex; flex-direction: column; gap: 1rem;">
+        <div class="empty-state">Loading assignments...</div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('createAssignmentBtn')?.addEventListener('click', () => {
+    openModal(
+      'Create Assignment',
+      `
+        <div class="form-group">
+          <label class="form-label">Title</label>
+          <input type="text" class="form-input" id="assignmentTitle" placeholder="Assignment title">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea class="form-input" id="assignmentDescription" rows="3" placeholder="Assignment description"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Instructions</label>
+          <textarea class="form-input" id="assignmentInstructions" rows="2" placeholder="Assignment instructions"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Due Date</label>
+          <input type="date" class="form-input" id="assignmentDueDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Audience</label>
+          <select class="form-input" id="assignmentAudience">
+            <option value="all">All Students</option>
+            <option value="online">Online Students</option>
+            <option value="physical">Physical Students</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-input" id="assignmentStatus">
+            <option value="active">Active</option>
+            <option value="draft">Draft</option>
+          </select>
+        </div>
+      `,
+      `
+        <button class="btn btn-primary" id="saveAssignmentBtn">Create Assignment</button>
+        <button class="btn btn-secondary" id="cancelAssignmentBtn">Cancel</button>
+      `
+    );
+
+    document.getElementById('saveAssignmentBtn')?.addEventListener('click', async () => {
+      const title = document.getElementById('assignmentTitle')?.value;
+      const description = document.getElementById('assignmentDescription')?.value;
+      const instructions = document.getElementById('assignmentInstructions')?.value;
+      const dueDate = document.getElementById('assignmentDueDate')?.value;
+      const audience = document.getElementById('assignmentAudience')?.value;
+      const status = document.getElementById('assignmentStatus')?.value;
+
+      if (!title || !dueDate) {
+        alert('Please fill in all required fields');
+        return;
+      }
+
+      try {
+        await createDoc('assignments', { title, description, instructions, dueDate, audience, status, createdAt: serverTimestamp() });
+        closeModal();
+        renderAssignmentsContent();
+      } catch (error) {
+        alert('Failed to create assignment: ' + error.message);
+      }
+    });
+
+    document.getElementById('cancelAssignmentBtn')?.addEventListener('click', closeModal);
+  });
+
+  loadAssignments();
+}
+
+async function loadAssignments() {
+  try {
+    const assignmentsData = await readDocs('assignments');
+    const list = document.getElementById('assignmentsList');
+    
+    if (!assignmentsData || assignmentsData.length === 0) {
+      list.innerHTML = '<div class="empty-state">No assignments found</div>';
+      return;
+    }
+
+    list.innerHTML = assignmentsData.map(assignment => `
+      <div class="student-card">
+        <div class="student-info">
+          <div class="student-name">${escapeHtml(assignment.title || 'Assignment')}</div>
+          <div class="student-details">
+            <span>Description: ${escapeHtml(assignment.description || 'N/A')}</span>
+            <span>Due: ${escapeHtml(assignment.dueDate || 'TBD')}</span>
+            <span>Audience: ${escapeHtml(assignment.audience || 'all')}</span>
+            <span>Status: ${escapeHtml(assignment.status || 'active')}</span>
+          </div>
+        </div>
+        <div class="student-actions">
+          <button class="btn btn-secondary" data-action="edit-assignment" data-assignment-id="${assignment.id}">Edit</button>
+          <button class="btn btn-danger" data-action="delete-assignment" data-assignment-id="${assignment.id}">Delete</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (error) {
+    console.error('Failed to load assignments:', error);
+  }
+}
+
 async function loadMeetings() {
   try {
     const meetingsData = await readDocs('meetingLinks');
@@ -713,6 +842,10 @@ async function renderContent(id) {
     renderPaymentVerificationContent();
     return;
   }
+  if (id === 'assignments') {
+    renderAssignmentsContent();
+    return;
+  }
   if (id === 'announcements') {
     renderAnnouncementsContent();
     return;
@@ -788,6 +921,85 @@ contentArea.addEventListener('click', async (event) => {
     if (confirm('Are you sure you want to delete this meeting?')) {
       await deleteDocById('meetingLinks', meetingId);
       renderMeetingsContent();
+    }
+  }
+  
+  if (action === 'delete-assignment') {
+    const assignmentId = button.dataset.assignmentId;
+    if (confirm('Are you sure you want to delete this assignment?')) {
+      await deleteDocById('assignments', assignmentId);
+      renderAssignmentsContent();
+    }
+  }
+  
+  if (action === 'edit-assignment') {
+    const assignmentId = button.dataset.assignmentId;
+    const assignment = assignments.find(a => a.id === assignmentId);
+    if (assignment) {
+      openModal(
+        'Edit Assignment',
+        `
+          <div class="form-group">
+            <label class="form-label">Title</label>
+            <input type="text" class="form-input" id="editAssignmentTitle" value="${escapeHtml(assignment.title || '')}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea class="form-input" id="editAssignmentDescription" rows="3">${escapeHtml(assignment.description || '')}</textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Instructions</label>
+            <textarea class="form-input" id="editAssignmentInstructions" rows="2">${escapeHtml(assignment.instructions || '')}</textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Due Date</label>
+            <input type="date" class="form-input" id="editAssignmentDueDate" value="${escapeHtml(assignment.dueDate || '')}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Audience</label>
+            <select class="form-input" id="editAssignmentAudience">
+              <option value="all" ${assignment.audience === 'all' ? 'selected' : ''}>All Students</option>
+              <option value="online" ${assignment.audience === 'online' ? 'selected' : ''}>Online Students</option>
+              <option value="physical" ${assignment.audience === 'physical' ? 'selected' : ''}>Physical Students</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select class="form-input" id="editAssignmentStatus">
+              <option value="active" ${assignment.status === 'active' ? 'selected' : ''}>Active</option>
+              <option value="draft" ${assignment.status === 'draft' ? 'selected' : ''}>Draft</option>
+            </select>
+          </div>
+        `,
+        `
+          <button class="btn btn-primary" id="updateAssignmentBtn">Update Assignment</button>
+          <button class="btn btn-secondary" id="cancelEditAssignmentBtn">Cancel</button>
+        `
+      );
+
+      document.getElementById('updateAssignmentBtn')?.addEventListener('click', async () => {
+        const title = document.getElementById('editAssignmentTitle')?.value;
+        const description = document.getElementById('editAssignmentDescription')?.value;
+        const instructions = document.getElementById('editAssignmentInstructions')?.value;
+        const dueDate = document.getElementById('editAssignmentDueDate')?.value;
+        const audience = document.getElementById('editAssignmentAudience')?.value;
+        const status = document.getElementById('editAssignmentStatus')?.value;
+
+        if (!title || !dueDate) {
+          alert('Please fill in all required fields');
+          return;
+        }
+
+        try {
+          await updateDocById('assignments', assignmentId, { title, description, instructions, dueDate, audience, status });
+          closeModal();
+          renderAssignmentsContent();
+        } catch (error) {
+          alert('Failed to update assignment: ' + error.message);
+        }
+      });
+
+      document.getElementById('cancelEditAssignmentBtn')?.addEventListener('click', closeModal);
     }
   }
   

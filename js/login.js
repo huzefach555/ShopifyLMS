@@ -41,9 +41,25 @@ form.addEventListener('submit', async (event) => {
     return;
   }
 
+  const submitBtn = form.querySelector('button[type="submit"]');
+  const originalText = submitBtn.textContent;
+
   try {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Signing In...';
+    
+    const overlay = document.createElement('div');
+    overlay.className = 'loading-overlay';
+    overlay.innerHTML = '<div class="loading-spinner"></div>';
+    document.body.appendChild(overlay);
+
     await initAuth();
     const state = await authLogin(email, password);
+    
+    overlay.remove();
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalText;
+    
     if (state.role === 'guest') {
       await authLogout();
       setMsg('Your account is not registered or is not authorized to sign in here.', false);
@@ -55,7 +71,6 @@ form.addEventListener('submit', async (event) => {
         return;
       }
       if (state.approvalStatus === 'rejected') {
-        // Get rejection reason from Firestore
         const { readDoc } = await import('./firestore.js');
         const student = await readDoc('students', state.user.uid);
         const reason = student?.rejectionReason || '';
@@ -70,6 +85,10 @@ form.addEventListener('submit', async (event) => {
     }
     redirectByRole(state.role);
   } catch (error) {
+    const overlay = document.querySelector('.loading-overlay');
+    if (overlay) overlay.remove();
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalText;
     setMsg(error.message || 'Login failed.', false);
   }
 });

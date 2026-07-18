@@ -13,6 +13,27 @@ const navItems = [
   { id: 'logout', label: 'Logout', icon: '⇢' }
 ];
 
+// Cache for frequently accessed data
+const dataCache = {
+  student: null,
+  tasks: null,
+  progress: null,
+  meetings: null,
+  announcements: null,
+  assignments: null,
+  resources: null
+};
+
+// Function to invalidate cache when data changes
+function invalidateCache(key) {
+  if (key) {
+    dataCache[key] = null;
+  } else {
+    // Clear all cache
+    Object.keys(dataCache).forEach(k => dataCache[k] = null);
+  }
+}
+
 const contentMap = {
   dashboard: null,
   profile: null,
@@ -84,8 +105,17 @@ async function renderProgressView() {
 
 async function renderMeetingView() {
   const state = getAuthState();
-  const student = await readDoc('students', state.user?.uid || '');
-  const meetings = await readDocs('meetingLinks');
+  
+  // Use cache if available, otherwise fetch and cache
+  if (!dataCache.student) {
+    dataCache.student = await readDoc('students', state.user?.uid || '');
+  }
+  if (!dataCache.meetings) {
+    dataCache.meetings = await readDocs('meetingLinks');
+  }
+  
+  const student = dataCache.student;
+  const meetings = dataCache.meetings;
   
   // Filter meetings based on student's learning mode and audience
   const filteredMeetings = meetings.filter(meeting => {
@@ -141,18 +171,70 @@ async function renderResourcesView() {
 }
 
 async function renderAssignmentsView() {
-  const assignments = await readDocs('assignments');
+  const state = getAuthState();
+  
+  // Use cache if available, otherwise fetch and cache
+  if (!dataCache.student) {
+    dataCache.student = await readDoc('students', state.user?.uid || '');
+  }
+  if (!dataCache.assignments) {
+    dataCache.assignments = await readDocs('assignments');
+  }
+  if (!dataCache.tasks) {
+    dataCache.tasks = await fetchTasksForStudent(state.user?.uid || '');
+  }
+  
+  const student = dataCache.student;
+  const assignments = dataCache.assignments;
+  const tasks = dataCache.tasks;
+  
+  // Filter assignments based on student's learning mode and audience
+  const filteredAssignments = assignments.filter(assignment => {
+    const audienceMatch = !assignment.audience || 
+      assignment.audience === 'all' ||
+      (assignment.audience === 'online' && student?.learningMode === 'Online') ||
+      (assignment.audience === 'physical' && student?.learningMode === 'Physical');
+    return audienceMatch && assignment.status === 'active';
+  });
+  
+  // Calculate progress for each assignment based on tasks
+  const assignmentsWithProgress = filteredAssignments.map(assignment => {
+    const assignmentTasks = tasks.filter(t => t.assignmentId === assignment.id);
+    const completedTasks = assignmentTasks.filter(t => t.completed);
+    const progress = assignmentTasks.length > 0 ? Math.round((completedTasks.length / assignmentTasks.length) * 100) : 0;
+    
+    let status = 'Pending';
+    if (progress === 100) status = 'Completed';
+    else if (progress > 0) status = 'In Progress';
+    
+    // Check if overdue
+    const dueDate = new Date(assignment.dueDate);
+    const today = new Date();
+    if (dueDate < today && progress < 100) status = 'Late';
+    
+    return { ...assignment, progress, status };
+  });
+
   contentArea.innerHTML = `
     <div class="card">
       <h3>Assignments</h3>
       <div class="resource-list">
-        ${assignments.map((assignment) => `
-          <div class="resource-card">
-            <div>
-              <strong>${assignment.title}</strong>
-              <p class="muted">Due: ${assignment.dueDate || 'No date'}</p>
+        ${assignmentsWithProgress.map((assignment) => `
+          <div class="resource-card" style="flex-direction: column; align-items: flex-start; gap: 0.75rem;">
+            <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <strong>${assignment.title || 'Assignment'}</strong>
+                <p class="muted">Due: ${assignment.dueDate || 'No date'}</p>
+              </div>
+              <span class="badge" style="background: ${assignment.status === 'Completed' ? 'rgba(31,157,115,0.15)' : assignment.status === 'Late' ? 'rgba(194,59,59,0.15)' : 'rgba(255,107,53,0.15)'}; color: ${assignment.status === 'Completed' ? '#1f9d73' : assignment.status === 'Late' ? '#c23b3b' : '#ff6b35'};">${assignment.status}</span>
             </div>
-            <a class="btn btn-secondary" href="${assignment.fileUrl}" target="_blank" rel="noreferrer">View</a>
+            <div style="width: 100%;">
+              <div class="progress-bar" style="height: 0.6rem;">
+                <span style="width: ${assignment.progress}%; background: linear-gradient(135deg, var(--primary), var(--primary-2));"></span>
+              </div>
+              <p class="muted" style="font-size: 0.8rem; margin-top: 0.4rem;">${assignment.progress}% Complete</p>
+            </div>
+            ${assignment.description ? `<p class="muted" style="font-size: 0.9rem;">${assignment.description}</p>` : ''}
           </div>
         `).join('') || '<p class="muted">No assignments yet.</p>'}
       </div>
@@ -161,10 +243,60 @@ async function renderAssignmentsView() {
 
 async function renderDashboardView() {
   const state = getAuthState();
-  const student = await readDoc('students', state.user?.uid || '');
-  const tasks = await fetchTasksForStudent(state.user?.uid || '');
+  
+  // Use cache if available, otherwise fetch and cache
+  if (!dataCache.student) {
+    dataCache.student = await readDoc('students', state.user?.uid || '');
+  }
+  if (!dataCache.tasks) {
+    dataCache.tasks = await fetchTasksForStudent(state.user?.uid || '');
+  }
+  if (!dataCache.progress) {
+    dataCache.progress = await fetchStudentProgress(state.user?.uid || '');
+  }
+  if (!dataCache.meetings) {
+    dataCache.meetings = await readDocs('meetingLinks');
+  }
+  if (!dataCache.announcements) {
+    dataCache.announcements = await readDocs('announcements');
+  }
+  
+  const student = dataCache.student;
+  const tasks = dataCache.tasks;
+  const progress = dataCache.progress;
+  const meetings = dataCache.meetings;
+  const announcements = dataCache.announcements;
+  
   const pendingTasks = tasks.filter(t => !t.completed);
-  const progress = await fetchStudentProgress(state.user?.uid || '');
+  const completedTasks = tasks.filter(t => t.completed);
+  
+  // Filter meetings based on student's learning mode
+  const filteredMeetings = meetings.filter(meeting => {
+    const learningModeMatch = !meeting.learningMode || 
+      meeting.learningMode === 'Both' || 
+      meeting.learningMode === student?.learningMode;
+    const audienceMatch = !meeting.audience || 
+      meeting.audience === 'all' ||
+      (meeting.audience === 'online' && student?.learningMode === 'Online') ||
+      (meeting.audience === 'physical' && student?.learningMode === 'Physical');
+    return learningModeMatch && audienceMatch;
+  });
+  
+  // Filter announcements based on student's approval status and learning mode
+  const filteredAnnouncements = announcements.filter(announcement => {
+    const audienceMatch = !announcement.audience || 
+      announcement.audience === 'all' ||
+      (announcement.audience === 'approved' && student?.approvalStatus === 'approved') ||
+      (announcement.audience === 'online' && student?.learningMode === 'Online') ||
+      (announcement.audience === 'physical' && student?.learningMode === 'Physical');
+    return audienceMatch;
+  });
+  
+  const sortedAnnouncements = filteredAnnouncements.sort((a, b) => {
+    const aTime = a.createdAt?.seconds || 0;
+    const bTime = b.createdAt?.seconds || 0;
+    return bTime - aTime;
+  });
 
   // Update hero card
   const welcomeEl = document.getElementById('welcomeMessage');
@@ -185,30 +317,135 @@ async function renderDashboardView() {
         <p class="muted">${pendingTasks.length} pending</p>
       </div>
       <div class="card">
-        <h3>Progress</h3>
-        <p class="muted">${progress?.percentage || 0}% complete</p>
+        <h3>Completed Tasks</h3>
+        <p class="muted">${completedTasks.length} completed</p>
       </div>
       <div class="card">
-        <h3>Payment Status</h3>
-        <p class="muted">${student?.paymentStatus || 'Pending'}</p>
+        <h3>Upcoming Meetings</h3>
+        <p class="muted">${filteredMeetings.length} scheduled</p>
       </div>
-    </div>`;
+    </div>
+    
+    <div class="card">
+      <h3>Upcoming Meetings</h3>
+      <div class="table-list">
+        ${filteredMeetings.slice(0, 3).map((meeting) => `
+          <div class="table-item">
+            <div>
+              <strong>${meeting.title || 'Meeting'}</strong>
+              <p class="muted">Date: ${meeting.date || 'TBD'} • Time: ${meeting.time || 'TBD'}</p>
+            </div>
+            <a class="btn btn-secondary" href="${meeting.link}" target="_blank" rel="noreferrer">Join</a>
+          </div>
+        `).join('') || '<p class="muted">No upcoming meetings</p>'}
+      </div>
+    </div>
+    
+    <div class="card">
+      <h3>Recent Announcements</h3>
+      <div class="table-list">
+        ${sortedAnnouncements.slice(0, 3).map((announcement) => `
+          <div class="table-item">
+            <div>
+              <strong>${announcement.title || 'Announcement'}</strong>
+              <p class="muted">${announcement.message || ''}</p>
+            </div>
+            <span class="badge">${announcement.createdAt ? new Date(announcement.createdAt.seconds * 1000).toLocaleDateString() : ''}</span>
+          </div>
+        `).join('') || '<p class="muted">No announcements</p>'}
+      </div>
+    </div>
+  `;
 }
 
 async function renderProfileView() {
   const state = getAuthState();
-  const student = await readDoc('students', state.user?.uid || '');
+  
+  // Use cache if available, otherwise fetch and cache
+  if (!dataCache.student) {
+    dataCache.student = await readDoc('students', state.user?.uid || '');
+  }
+  
+  const student = dataCache.student;
 
   contentArea.innerHTML = `
     <div class="card">
       <h3>Profile</h3>
-      <p class="muted">Name: ${student?.fullName || state.user?.displayName || ''}</p>
-      <p class="muted">Email: ${student?.email || state.user?.email || ''}</p>
-      <p class="muted">Phone: ${student?.phone || ''}</p>
-      <p class="muted">Course: ${student?.course || 'Not selected'}</p>
-      <p class="muted">Learning Mode: ${student?.learningMode || 'Not specified'}</p>
-      <p class="muted">Registration Date: ${student?.createdAt ? new Date(student.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}</p>
+      <div style="display: grid; gap: 1rem; margin-top: 1rem;">
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+          <div>
+            <p class="muted" style="font-size: 0.85rem; font-weight: 600;">Full Name</p>
+            <p>${student?.fullName || state.user?.displayName || 'N/A'}</p>
+          </div>
+          <div>
+            <p class="muted" style="font-size: 0.85rem; font-weight: 600;">Email</p>
+            <p>${student?.email || state.user?.email || 'N/A'}</p>
+          </div>
+          <div>
+            <p class="muted" style="font-size: 0.85rem; font-weight: 600;">Phone</p>
+            <p>${student?.phone || 'N/A'}</p>
+          </div>
+          <div>
+            <p class="muted" style="font-size: 0.85rem; font-weight: 600;">WhatsApp</p>
+            <p>${student?.whatsapp || 'N/A'}</p>
+          </div>
+          <div>
+            <p class="muted" style="font-size: 0.85rem; font-weight: 600;">Course</p>
+            <p>${student?.course || 'Not selected'}</p>
+          </div>
+          <div>
+            <p class="muted" style="font-size: 0.85rem; font-weight: 600;">Learning Mode</p>
+            <p>${student?.learningMode || 'Not specified'}</p>
+          </div>
+          <div>
+            <p class="muted" style="font-size: 0.85rem; font-weight: 600;">City</p>
+            <p>${student?.city || 'N/A'}</p>
+          </div>
+          <div>
+            <p class="muted" style="font-size: 0.85rem; font-weight: 600;">Country</p>
+            <p>${student?.country || 'N/A'}</p>
+          </div>
+        </div>
+        <div>
+          <p class="muted" style="font-size: 0.85rem; font-weight: 600;">Registration Date</p>
+          <p>${student?.createdAt ? new Date(student.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}</p>
+        </div>
+        <div>
+          <p class="muted" style="font-size: 0.85rem; font-weight: 600;">Approval Status</p>
+          <span class="badge">${student?.approvalStatus || 'pending'}</span>
+        </div>
+        <div>
+          <p class="muted" style="font-size: 0.85rem; font-weight: 600;">Payment Status</p>
+          <span class="badge">${student?.paymentStatus || 'pending'}</span>
+        </div>
+      </div>
+      <div style="margin-top: 2rem; padding: 1rem; background: rgba(255,107,53,0.1); border-radius: 12px; border: 1px solid rgba(255,107,53,0.2);">
+        <p style="font-weight: 600; margin-bottom: 0.5rem;">Profile Changes Require Administrator Approval</p>
+        <p class="muted" style="font-size: 0.9rem;">To update your profile information, submit a request to the administrator for review and approval.</p>
+        <button class="btn btn-primary" style="margin-top: 1rem;" id="requestUpdateBtn">Request Profile Update</button>
+      </div>
     </div>`;
+  
+  document.getElementById('requestUpdateBtn')?.addEventListener('click', () => {
+    const reason = prompt('Please describe the changes you would like to make to your profile:');
+    if (reason) {
+      // Create profile update request in Firestore
+      import('./firestore.js').then(({ createDoc }) => {
+        createDoc('profileUpdateRequests', {
+          studentId: state.user?.uid,
+          studentName: student?.fullName || state.user?.displayName,
+          studentEmail: student?.email || state.user?.email,
+          reason: reason,
+          status: 'pending',
+          createdAt: new Date()
+        }).then(() => {
+          alert('Your profile update request has been submitted. An administrator will review it shortly.');
+        }).catch((error) => {
+          alert('Failed to submit request: ' + error.message);
+        });
+      });
+    }
+  });
 }
 
 async function renderCourseView() {
@@ -225,8 +462,17 @@ async function renderCourseView() {
 
 async function renderAnnouncementsView() {
   const state = getAuthState();
-  const student = await readDoc('students', state.user?.uid || '');
-  const announcements = await readDocs('announcements');
+  
+  // Use cache if available, otherwise fetch and cache
+  if (!dataCache.student) {
+    dataCache.student = await readDoc('students', state.user?.uid || '');
+  }
+  if (!dataCache.announcements) {
+    dataCache.announcements = await readDocs('announcements');
+  }
+  
+  const student = dataCache.student;
+  const announcements = dataCache.announcements;
 
   // Filter announcements based on student's approval status and learning mode
   const filteredAnnouncements = announcements.filter(announcement => {
@@ -355,6 +601,8 @@ async function initStudentListeners() {
   studentUnsub = await listenDocs('students', [{ field: 'uid', op: '==', value: state.user.uid }], (docs) => {
     const student = (docs && docs[0]) || null;
     if (!student) return;
+    // Update cache when student data changes
+    dataCache.student = student;
     // if not approved, redirect to login/blocked
     if (student.approvalStatus !== 'approved') {
       window.location.href = './login.html?status=blocked';

@@ -43,6 +43,13 @@ async function handleSubmit(event) {
     const btn = findSubmit();
     if (!await ensureSignedIn()) return;
     setLoading(btn, true);
+    
+    // Show loading overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'loading-overlay';
+    overlay.innerHTML = '<div class="loading-spinner"></div>';
+    document.body.appendChild(overlay);
+    
     try {
         const auth = await getFirebaseAuth();
         const user = auth.currentUser;
@@ -52,6 +59,7 @@ async function handleSubmit(event) {
         if (!file) {
             alert('Please select a payment screenshot.');
             setLoading(btn, false);
+            overlay.remove();
             return;
         }
 
@@ -59,13 +67,20 @@ async function handleSubmit(event) {
         const fullNameEl = document.getElementById('fullName');
         const emailEl = document.getElementById('email');
         const phoneEl = document.getElementById('phone');
+        
+        // Get selected payment method
+        const selectedMethod = document.querySelector('.pay-card.selected');
+        const paymentMethod = selectedMethod ? 
+            (selectedMethod.classList.contains('easypaisa') ? 'EasyPaisa' :
+             selectedMethod.classList.contains('jazzcash') ? 'JazzCash' :
+             selectedMethod.classList.contains('hbl') ? 'HBL Bank' : 'EasyPaisa') : 'EasyPaisa';
 
         const payload = {
             transactionId: txnEl ? txnEl.value : '',
             fullName: fullNameEl ? fullNameEl.value : (user.displayName || ''),
             email: emailEl ? emailEl.value : (user.email || ''),
             phone: phoneEl ? phoneEl.value : '',
-            paymentMethod: 'EasyPaisa',
+            paymentMethod: paymentMethod,
             uploadDate: new Date().toISOString(),
             paymentStatus: 'Pending'
         };
@@ -82,9 +97,12 @@ async function handleSubmit(event) {
             } catch (e) {}
         });
 
+        overlay.remove();
         window.location.href = '../login.html?status=paymentSubmitted';
 
     } catch (err) {
+        const overlay = document.querySelector('.loading-overlay');
+        if (overlay) overlay.remove();
         alert(err.message || 'Payment upload failed.');
     } finally {
         const btn = findSubmit();

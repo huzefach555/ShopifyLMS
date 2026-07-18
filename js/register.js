@@ -31,17 +31,38 @@ form.addEventListener('submit', async (event) => {
     setMessage(error, false);
     return;
   }
+  const submitBtn = form.querySelector('button[type="submit"]');
+  const originalText = submitBtn.textContent;
+  
   try {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating Account...';
+    
+    // Show loading overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'loading-overlay';
+    overlay.innerHTML = '<div class="loading-spinner"></div>';
+    document.body.appendChild(overlay);
+    
     await initializeFirebase();
     const fileInput = form.querySelector('input[name="photo"]');
     const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
     const payload = { ...data };
     delete payload.photo;
     const result = await registerStudent(payload, file);
+    
+    overlay.remove();
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalText;
+    
     setMessage(`Registration successful for ${result.user.email}.`, true);
     window.location.href = "./pages/payment.html";
     form.reset();
   } catch (error) {
+    const overlay = document.querySelector('.loading-overlay');
+    if (overlay) overlay.remove();
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalText;
     setMessage((error && (error.message || error.code)) || 'Registration failed.', false);
   }
 });

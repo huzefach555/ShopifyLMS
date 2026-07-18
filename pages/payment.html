@@ -132,6 +132,7 @@
     -webkit-backdrop-filter:blur(18px);
     position:relative;overflow:hidden;
     transition:transform .4s var(--ease), box-shadow .4s var(--ease), border-color .4s var(--ease);
+    cursor:pointer;
   }
   .pay-card::before{
     content:'';position:absolute;inset:0;
@@ -145,6 +146,11 @@
     box-shadow:0 20px 50px -10px color-mix(in srgb, var(--accent) 35%, transparent);
   }
   .pay-card:hover::before{opacity:.14;}
+  .pay-card.selected{
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent), 0 20px 50px -10px color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+  .pay-card.selected::before{opacity:.2;}
   .pay-card.easypaisa{--accent:var(--easypaisa);}
   .pay-card.jazzcash{--accent:var(--jazzcash);}
   .pay-card.hbl{--accent:var(--hbl);}
@@ -696,6 +702,14 @@
         btn.classList.remove('copied');
         icon.className = 'fa-solid fa-copy';
       }, 1600);
+    });
+  });
+
+  /* ---------- Payment method selection ---------- */
+  document.querySelectorAll('.pay-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.pay-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
     });
   });
 
