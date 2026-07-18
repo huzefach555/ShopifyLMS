@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portal Locked</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #1a1a1a;
+        --surface: #2d2d2d;
+        --surface-strong: #3d3d3d;
+        --border: #4a4a4a;
+        --text: #ffffff;
+        --muted: #a0a0a0;
+        --primary: #ff6b35;
+        --primary-rgb: 255, 107, 53;
+        --warning: #f59e0b;
+        --warning-rgb: 245, 158, 11;
+        --danger: #ef4444;
+        --danger-rgb: 239, 68, 68;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+      }
+
+      .locked-container {
+        max-width: 500px;
+        width: 100%;
+        text-align: center;
+      }
+
+      .lock-icon {
+        font-size: 5rem;
+        margin-bottom: 2rem;
+      }
+
+      .status-badge {
+        display: inline-flex;
+        padding: 0.5rem 1rem;
+        border-radius: 999px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 1.5rem;
+      }
+
+      .status-badge.pending {
+        background: rgba(var(--warning-rgb), 0.2);
+        color: var(--warning);
+      }
+
+      .status-badge.rejected {
+        background: rgba(var(--danger-rgb), 0.2);
+        color: var(--danger);
+      }
+
+      h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+      }
+
+      p {
+        color: var(--muted);
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+      }
+
+      .reason-box {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        text-align: left;
+      }
+
+      .reason-label {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--text);
+      }
+
+      .reason-text {
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .btn {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.875rem;
+        text-decoration: none;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, var(--primary), var(--warning));
+        color: white;
+      }
+
+      .btn-primary:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+      }
+
+      .btn-secondary {
+        background: var(--surface-strong);
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+
+      .btn-secondary:hover {
+        background: var(--border);
+      }
+
+      .actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="locked-container">
+      <div class="lock-icon">🔒</div>
+      <div id="statusBadge" class="status-badge pending">Pending</div>
+      <h1 id="title">Account Awaiting Approval</h1>
+      <p id="message">Your account is currently under review. Please wait for an administrator to approve your registration.</p>
+      <div id="reasonBox" class="reason-box" style="display: none;">
+        <div class="reason-label">Reason for Rejection:</div>
+        <div class="reason-text" id="reasonText"></div>
+      </div>
+      <div class="actions">
+        <a href="./index.html" class="btn btn-secondary">Back to Home</a>
+        <button class="btn btn-primary" id="logoutBtn">Logout</button>
+      </div>
+    </div>
+
+    <script type="module">
+      import { authLogout, getAuthState } from './js/auth.js';
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const status = urlParams.get('status') || 'pending';
+      const reason = urlParams.get('reason') || '';
+
+      const statusBadge = document.getElementById('statusBadge');
+      const title = document.getElementById('title');
+      const message = document.getElementById('message');
+      const reasonBox = document.getElementById('reasonBox');
+      const reasonText = document.getElementById('reasonText');
+
+      if (status === 'rejected') {
+        statusBadge.textContent = 'Rejected';
+        statusBadge.className = 'status-badge rejected';
+        title.textContent = 'Account Rejected';
+        message.textContent = 'Your account application has been rejected by an administrator.';
+        if (reason) {
+          reasonBox.style.display = 'block';
+          reasonText.textContent = reason;
+        }
+      } else {
+        statusBadge.textContent = 'Pending';
+        statusBadge.className = 'status-badge pending';
+        title.textContent = 'Account Awaiting Approval';
+        message.textContent = 'Your account is currently under review. Please wait for an administrator to approve your registration.';
+      }
+
+      document.getElementById('logoutBtn').addEventListener('click', async () => {
+        await authLogout();
+        window.location.href = './login.html';
+      });
+    </script>
+  </body>
+</html>

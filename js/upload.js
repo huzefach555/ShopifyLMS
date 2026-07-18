@@ -3,15 +3,16 @@ import { createDoc, readDoc } from './firestore.js';
 import { uploadToCloudinary } from './cloudinary.js';
 
 const RESOURCE_LIMIT = 20 * 1024 * 1024;
-const IMAGE_LIMIT = 5 * 1024 * 1024;
+// Match UI: allow up to 10MB for payment screenshots (images or PDF)
+const IMAGE_LIMIT = 10 * 1024 * 1024;
 const ALLOWED_RESOURCE_TYPES = ['application/pdf', 'application/zip', 'application/x-zip-compressed', 'application/x-zip'];
-const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/jpg'];
+const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/jpg', 'application/pdf'];
 
 async function getUser() {
   await initializeFirebase();
   const auth = await getFirebaseAuth();
   const user = auth.currentUser;
-  if (!user) throw new Error('Please sign in.');
+  if (!user) throw new Error("Please sign in.");
   return user;
 }
 
@@ -29,21 +30,32 @@ function validateFile(file, allowedTypes, maxSize, label) {
 }
 
 export async function uploadPaymentRecord(payload, file, onProgress = null) {
-  const user = await getUser();
-  await ensureApprovedStudent(user);
-  validateFile(file, ALLOWED_IMAGE_TYPES, IMAGE_LIMIT, 'image');
-  const response = await uploadToCloudinary(file, `payments/${user.uid}`, onProgress);
-  const record = {
-    studentId: user.uid,
-    studentEmail: user.email || '',
-    transactionId: payload.transactionId,
-    paymentMethod: payload.paymentMethod,
-    uploadDate: payload.uploadDate,
-    paymentStatus: payload.paymentStatus || 'Pending',
-    screenshotUrl: response.secure_url
-  };
-  await createDoc('payments', record);
-  return record;
+  try {
+    const user = await getUser();
+    validateFile(file, ALLOWED_IMAGE_TYPES, IMAGE_LIMIT, 'image');
+    const response = await uploadToCloudinary(file, `payments/${user.uid}`, onProgress);
+
+    const record = {
+      studentId: user.uid,
+      studentName: payload.fullName || user.displayName || '',
+      studentEmail: payload.email || user.email || '',
+      studentPhone: payload.phone || '',
+      transactionId: payload.transactionId,
+      paymentMethod: payload.paymentMethod,
+      paymentStatus: payload.paymentStatus || 'Pending',
+      screenshotUrl: response.secure_url,
+      uploadDate: payload.uploadDate || new Date().toISOString()
+    };
+
+    try {
+      const saved = await createDoc('payments', record);
+      return { id: saved.id || null, ...record };
+    } catch (err) {
+      throw err;
+    }
+  } catch (err) {
+    throw err;
+  }
 }
 
 export async function uploadAssignmentFile(payload, file, onProgress = null) {

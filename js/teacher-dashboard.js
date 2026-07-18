@@ -15,11 +15,12 @@ import { uploadAssignmentFile, uploadResourceFile } from './upload.js';
 import { createTask, deleteTask, fetchAssignableStudents, fetchTasksForTeacher, updateTask } from './tasks.js';
 import { fetchProgressRecords, saveStudentProgress } from './progress.js';
 import { deleteMeetingLink, fetchMeetingLinks, saveMeetingLink } from './meetings.js';
-import { readDocs } from './firestore.js';
+import { readDocs, readDoc } from './firestore.js';
+import { getAuthState, initAuth, requireAuth } from './auth.js';
 
 const contentMap = {
-  dashboard: `<div class="stats-grid"><div class="card"><h3>Students</h3><p class="muted">Live roster</p></div><div class="card"><h3>Tasks</h3><p class="muted">Manage all tasks</p></div><div class="card"><h3>Notes</h3><p class="muted">Upload materials</p></div><div class="card"><h3>Meetings</h3><p class="muted">Schedule sessions</p></div></div>`,
-  profile: `<div class="card"><h3>Profile</h3><p class="muted">Name: Hassan Khan</p><p class="muted">Email: hassan@example.com</p><p class="muted">Specialty: Shopify Growth</p></div>`,
+  dashboard: null,
+  profile: null,
   students: `<div class="card"><h3>Student Overview</h3><p class="muted">Students are listed in the task assignment form.</p></div>`,
   createTask: `<div class="card"><h3>Create Task</h3><p class="muted">Create and assign tasks to students.</p></div>`,
   uploadNotes: `<div class="card"><h3>Upload Resources</h3><form id="notesForm" class="payment-form"><input name="title" placeholder="Resource title" required /><select name="type" required><option value="">Select type</option><option value="PDF">PDF</option><option value="ZIP">ZIP</option></select><input type="file" name="file" accept=".pdf,.zip" required /><button type="submit">Upload Resource</button><div class="progress-track" id="notesProgressTrack"><span id="notesProgressBar"></span></div><div class="status" id="notesStatus"></div></form></div>`,
@@ -38,7 +39,11 @@ const themeToggle = document.getElementById('themeToggle');
 let taskState = { students: [], tasks: [] };
 
 function renderNav() {
-  navList.innerHTML = navItems.map((item) => `<button class="nav-item${item.id === 'dashboard' ? ' active' : ''}" data-id="${item.id}"><span>${item.icon} ${item.label}</span></button>`).join('');
+  navList.innerHTML = navItems.map((item) => `
+    <button class="nav-item${item.id === 'dashboard' ? ' active' : ''}" data-id="${item.id}" aria-label="${item.label}" title="${item.label}">
+      <span>${item.icon} ${item.label}</span>
+    </button>
+  `).join('');
 }
 
 async function renderTaskManager() {
@@ -202,8 +207,63 @@ async function renderMeetingManager() {
   });
 }
 
+async function renderDashboardView() {
+  const state = getAuthState();
+  const students = await fetchAssignableStudents();
+  const tasks = await fetchTasksForTeacher();
+  const pendingTasks = tasks.filter(t => !t.completed);
+
+  // Update hero card
+  const welcomeEl = document.getElementById('welcomeMessage');
+  const weeklySummaryEl = document.getElementById('weeklySummary');
+  const teacher = await readDoc('teachers', state.user?.uid || '');
+  if (welcomeEl) welcomeEl.textContent = `Welcome, ${teacher?.fullName || state.user?.displayName || 'Teacher'}`;
+  if (weeklySummaryEl) weeklySummaryEl.textContent = `${students.length} students active • ${pendingTasks.length} pending tasks`;
+
+  contentArea.innerHTML = `
+    <div class="stats-grid">
+      <div class="card">
+        <h3>Students</h3>
+        <p class="muted">${students.length} approved</p>
+      </div>
+      <div class="card">
+        <h3>Total Tasks</h3>
+        <p class="muted">${tasks.length} created</p>
+      </div>
+      <div class="card">
+        <h3>Pending Tasks</h3>
+        <p class="muted">${pendingTasks.length} active</p>
+      </div>
+      <div class="card">
+        <h3>Resources</h3>
+        <p class="muted">Upload materials</p>
+      </div>
+    </div>`;
+}
+
+async function renderProfileView() {
+  const state = getAuthState();
+  const teacher = await readDoc('teachers', state.user?.uid || '');
+
+  contentArea.innerHTML = `
+    <div class="card">
+      <h3>Profile</h3>
+      <p class="muted">Name: ${teacher?.fullName || state.user?.displayName || ''}</p>
+      <p class="muted">Email: ${teacher?.email || state.user?.email || ''}</p>
+      <p class="muted">Specialty: ${teacher?.specialty || 'Not specified'}</p>
+    </div>`;
+}
+
 async function renderContent(id) {
   pageTitle.textContent = navItems.find((item) => item.id === id)?.label || 'Dashboard';
+  if (id === 'dashboard') {
+    await renderDashboardView();
+    return;
+  }
+  if (id === 'profile') {
+    await renderProfileView();
+    return;
+  }
   if (id === 'createTask') {
     await renderTaskManager();
     return;
@@ -216,7 +276,7 @@ async function renderContent(id) {
     await renderMeetingManager();
     return;
   }
-  contentArea.innerHTML = contentMap[id] || contentMap.dashboard;
+  contentArea.innerHTML = contentMap[id] || '<div class="card"><p class="muted">Content not available.</p></div>';
   if (id === 'uploadNotes') {
     const form = document.getElementById('notesForm');
     const status = document.getElementById('notesStatus');
@@ -225,14 +285,16 @@ async function renderContent(id) {
     if (form) {
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
+        const submitBtn = form.querySelector('button[type="submit"]');
         const data = new FormData(form);
         const payload = Object.fromEntries(data.entries());
         const file = data.get('file');
-        status.textContent = 'Uploading...';
-        status.className = 'status';
-        progressTrack.style.display = 'block';
-        progressBar.style.width = '0%';
         try {
+          if (submitBtn) { submitBtn.setAttribute('disabled','disabled'); submitBtn.textContent = 'Uploading...'; }
+          status.textContent = 'Uploading...';
+          status.className = 'status';
+          progressTrack.style.display = 'block';
+          progressBar.style.width = '0%';
           await uploadResourceFile(payload, file, (percent) => {
             progressBar.style.width = `${percent}%`;
           });
@@ -243,6 +305,8 @@ async function renderContent(id) {
         } catch (error) {
           status.textContent = error.message || 'Upload failed.';
           status.className = 'status error';
+        } finally {
+          if (submitBtn) { submitBtn.removeAttribute('disabled'); submitBtn.textContent = 'Upload Resource'; }
         }
       });
     }
@@ -255,14 +319,16 @@ async function renderContent(id) {
     if (form) {
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
+        const submitBtn = form.querySelector('button[type="submit"]');
         const data = new FormData(form);
         const payload = Object.fromEntries(data.entries());
         const file = data.get('file');
-        status.textContent = 'Uploading...';
-        status.className = 'status';
-        progressTrack.style.display = 'block';
-        progressBar.style.width = '0%';
         try {
+          if (submitBtn) { submitBtn.setAttribute('disabled','disabled'); submitBtn.textContent = 'Uploading...'; }
+          status.textContent = 'Uploading...';
+          status.className = 'status';
+          progressTrack.style.display = 'block';
+          progressBar.style.width = '0%';
           await uploadAssignmentFile(payload, file, (percent) => {
             progressBar.style.width = `${percent}%`;
           });
@@ -273,6 +339,8 @@ async function renderContent(id) {
         } catch (error) {
           status.textContent = error.message || 'Upload failed.';
           status.className = 'status error';
+        } finally {
+          if (submitBtn) { submitBtn.removeAttribute('disabled'); submitBtn.textContent = 'Upload Assignment'; }
         }
       });
     }
@@ -343,5 +411,12 @@ themeToggle.addEventListener('click', () => {
 const savedTheme = localStorage.getItem('theme') || 'light';
 document.documentElement.setAttribute('data-theme', savedTheme);
 themeToggle.textContent = savedTheme === 'light' ? '☀' : '☾';
+
+// Ensure only teachers can access this page
+await initAuth();
+if (!requireAuth('teacher')) {
+  throw new Error('Unauthorized');
+}
+
 renderNav();
 await renderContent('dashboard');

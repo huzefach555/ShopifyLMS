@@ -10,11 +10,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./css/styles.css" />
+    <link rel="stylesheet" href="./css/_accessibility.css" />
   </head>
   <body>
+    <a class="skip-link" href="#mainContent" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">Skip to main content</a>
     <div class="page-shell">
       <header class="topbar">
-        <a class="brand" href="#home">
+        <a class="brand" href="#mainContent">
           <span class="brand-mark">S</span>
           <span>Shopify Crash Course Institute</span>
         </a>
@@ -32,11 +34,12 @@
         </nav>
         <div class="topbar-actions">
           <button class="theme-toggle" aria-label="Toggle color theme">☀</button>
+          <a class="btn btn-secondary" href="./login.html">Login</a>
           <a class="btn btn-primary" href="./register.html">Apply Now</a>
         </div>
       </header>
 
-      <main id="home">
+      <main id="mainContent">
         <section class="hero section reveal">
           <div class="hero-copy">
             <span class="pill">Premium Shopify Training</span>
@@ -150,25 +153,8 @@
             <span class="pill">Pricing</span>
             <h2>Choose the plan that matches your pace.</h2>
           </div>
-          <div class="pricing-grid">
-            <article class="glass price-card">
-              <h3>Starter</h3>
-              <p class="price">$149</p>
-              <p>Perfect for first-time store builders.</p>
-              <a class="btn btn-secondary" href="#contact">Reserve Seat</a>
-            </article>
-            <article class="glass price-card featured">
-              <h3>Pro</h3>
-              <p class="price">$349</p>
-              <p>Includes full access, live coaching, and templates.</p>
-              <a class="btn btn-primary" href="#contact">Join Pro</a>
-            </article>
-            <article class="glass price-card">
-              <h3>Elite</h3>
-              <p class="price">$799</p>
-              <p>For founders ready for advanced growth support.</p>
-              <a class="btn btn-secondary" href="#contact">Book Strategy Call</a>
-            </article>
+          <div class="pricing-grid" id="coursesGrid">
+            <p class="muted">Loading courses...</p>
           </div>
         </section>
 
@@ -256,5 +242,57 @@
     </div>
 
     <script defer src="./js/app.js"></script>
+    <script type="module">
+      import { initializeFirebase } from './js/firebase.js';
+      import { readDocs } from './js/firestore.js';
+
+      async function loadCourses() {
+        try {
+          await initializeFirebase();
+          const courses = await readDocs('courses');
+          const coursesGrid = document.getElementById('coursesGrid');
+          
+          if (courses.length === 0) {
+            coursesGrid.innerHTML = `
+              <article class="glass price-card">
+                <h3>Starter</h3>
+                <p class="price">$149</p>
+                <p>Perfect for first-time store builders.</p>
+                <a class="btn btn-secondary" href="#contact">Reserve Seat</a>
+              </article>
+              <article class="glass price-card featured">
+                <h3>Pro</h3>
+                <p class="price">$349</p>
+                <p>Includes full access, live coaching, and templates.</p>
+                <a class="btn btn-primary" href="#contact">Join Pro</a>
+              </article>
+              <article class="glass price-card">
+                <h3>Elite</h3>
+                <p class="price">$799</p>
+                <p>For founders ready for advanced growth support.</p>
+                <a class="btn btn-secondary" href="#contact">Book Strategy Call</a>
+              </article>
+            `;
+            return;
+          }
+
+          coursesGrid.innerHTML = courses.map((course, index) => `
+            <article class="glass price-card ${index === 1 ? 'featured' : ''}">
+              <h3>${course.title || 'Course'}</h3>
+              <p class="price">${course.price ? 'PKR ' + course.price : 'Contact for pricing'}</p>
+              <p>${course.description || 'Course description'}</p>
+              <p class="muted">Duration: ${course.duration || 'TBD'}</p>
+              <a class="btn ${index === 1 ? 'btn-primary' : 'btn-secondary'}" href="./register.html">Enroll Now</a>
+            </article>
+          `).join('');
+        } catch (error) {
+          console.error('Failed to load courses:', error);
+          const coursesGrid = document.getElementById('coursesGrid');
+          coursesGrid.innerHTML = '<p class="muted">Failed to load courses. Please try again later.</p>';
+        }
+      }
+
+      loadCourses();
+    </script>
   </body>
 </html>

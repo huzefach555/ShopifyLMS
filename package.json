@@ -1,0 +1,13 @@
+{
+  "name": "shopifylms-e2e",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "http-server . -p 3000",
+    "test:e2e": "node ./tests/e2e.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.37.0",
+    "http-server": "^14.1.1"
+  }
+}

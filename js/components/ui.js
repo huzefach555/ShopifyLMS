@@ -10,12 +10,12 @@ export function renderHeader(container, state, toggleTheme, onAuth) {
       <img src="${assetPrefix}assets/logo.svg" alt="logo" />
       <span>Northstar LMS</span>
     </div>
-    <nav class="nav-links">
-      <a href="${homeHref}" class="active">Home</a>
-      <a href="${pagesHref('courses.html')}">Courses</a>
-      <a href="${pagesHref('about.html')}">About</a>
-      <button class="ghost-btn" data-action="theme">${state.theme === 'light' ? '🌙' : '☀️'}</button>
-      <button class="primary-btn" data-action="auth">${state.user ? 'Logout' : 'Login'}</button>
+    <nav class="nav-links" aria-label="Primary navigation">
+      <a href="${homeHref}" class="active" aria-label="Home">Home</a>
+      <a href="${pagesHref('courses.html')}" aria-label="Courses">Courses</a>
+      <a href="${pagesHref('about.html')}" aria-label="About">About</a>
+      <button class="ghost-btn" data-action="theme" aria-label="Toggle theme">${state.theme === 'light' ? '🌙' : '☀️'}</button>
+      <button class="primary-btn" data-action="auth" aria-label="${state.user ? 'Logout' : 'Login'}">${state.user ? 'Logout' : 'Login'}</button>
     </nav>
   `;
   container.querySelector('[data-action="theme"]').addEventListener('click', toggleTheme);
@@ -38,7 +38,7 @@ export function renderSidebar(container, state, path) {
       <h3>${state.user ? 'Welcome back' : 'Start learning'}</h3>
       <p>${state.user ? state.user.email : 'Sign in to access your learning dashboard.'}</p>
       <div class="quick-links">
-        ${items.map((item) => `<a href="${item.href}" class="${path === item.href.split('/').pop() ? 'active' : ''}">${item.label}</a>`).join('')}
+        ${items.map((item) => `<a href="${item.href}" class="${path === item.href.split('/').pop() ? 'active' : ''}" aria-label="${item.label}">${item.label}</a>`).join('')}
       </div>
     </div>
   `;

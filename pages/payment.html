@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Complete Your Payment — Digital Skills Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+  :root{
+    --bg:#0F172A;
+    --bg-2:#0B1220;
+    --card:rgba(255,255,255,0.08);
+    --card-hover:rgba(255,255,255,0.12);
+    --border:rgba(255,255,255,0.15);
+    --grad-1:#2563EB;
+    --grad-2:#7C3AED;
+    --easypaisa:#22C55E;
+    --jazzcash:#EF4444;
+    --hbl:#2563EB;
+    --text:#FFFFFF;
+    --text-2:#CBD5E1;
+    --text-3:#8896AB;
+    --radius:20px;
+    --radius-sm:14px;
+    --ease:cubic-bezier(.22,1,.36,1);
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+
+  html{scroll-behavior:smooth;}
+
+  body{
+    font-family:'Inter',sans-serif;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(37,99,235,0.20), transparent 45%),
+      radial-gradient(circle at 85% 10%, rgba(124,58,237,0.18), transparent 45%),
+      radial-gradient(circle at 50% 90%, rgba(34,197,94,0.10), transparent 50%),
+      linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+    background-attachment:fixed;
+    color:var(--text);
+    min-height:100vh;
+    overflow-x:hidden;
+    position:relative;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar{width:10px;}
+  ::-webkit-scrollbar-track{background:var(--bg-2);}
+  ::-webkit-scrollbar-thumb{
+    background:linear-gradient(180deg,var(--grad-1),var(--grad-2));
+    border-radius:10px;
+  }
+  ::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,#3b74f5,#8f4ff0);}
+
+  /* Floating background shapes */
+  .bg-shapes{position:fixed;inset:0;overflow:hidden;z-index:0;pointer-events:none;}
+  .shape{
+    position:absolute;border-radius:50%;
+    filter:blur(60px);opacity:0.35;
+    animation:float 18s ease-in-out infinite;
+  }
+  .shape.s1{width:380px;height:380px;background:var(--grad-1);top:-120px;left:-100px;animation-duration:22s;}
+  .shape.s2{width:300px;height:300px;background:var(--grad-2);top:40%;right:-120px;animation-duration:26s;animation-delay:-4s;}
+  .shape.s3{width:260px;height:260px;background:var(--easypaisa);bottom:-100px;left:20%;animation-duration:20s;animation-delay:-9s;opacity:0.18;}
+  .shape.s4{width:200px;height:200px;background:var(--jazzcash);top:10%;right:20%;animation-duration:24s;animation-delay:-13s;opacity:0.12;}
+
+  @keyframes float{
+    0%,100%{transform:translate(0,0) scale(1);}
+    33%{transform:translate(30px,-40px) scale(1.08);}
+    66%{transform:translate(-25px,25px) scale(0.95);}
+  }
+
+  .wrap{position:relative;z-index:1;max-width:1080px;margin:0 auto;padding:64px 24px 100px;}
+
+  /* Header */
+  header{text-align:center;margin-bottom:56px;opacity:0;animation:fadeUp .7s var(--ease) forwards;}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    font-size:12.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--grad-1);background:rgba(37,99,235,0.12);
+    border:1px solid rgba(37,99,235,0.3);
+    padding:7px 16px;border-radius:100px;margin-bottom:22px;
+  }
+  .eyebrow i{font-size:11px;}
+  h1{
+    font-family:'Poppins',sans-serif;
+    font-size:clamp(32px,5vw,48px);
+    font-weight:800;
+    letter-spacing:-0.02em;
+    background:linear-gradient(135deg,#fff 30%,var(--text-2) 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    margin-bottom:14px;
+  }
+  header p{color:var(--text-2);font-size:16.5px;max-width:520px;margin:0 auto;line-height:1.6;}
+
+  /* Section titles */
+  .section-title{
+    display:flex;align-items:baseline;gap:12px;margin-bottom:22px;
+  }
+  .section-title .num{
+    font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;color:var(--grad-1);
+    background:rgba(37,99,235,.15);border:1px solid rgba(37,99,235,.3);
+    width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+  }
+  .section-title h2{font-family:'Poppins',sans-serif;font-size:22px;font-weight:700;}
+  .section-title p{color:var(--text-3);font-size:14px;margin-top:2px;}
+
+  section{margin-bottom:56px;opacity:0;animation:fadeUp .7s var(--ease) forwards;}
+  section:nth-of-type(1){animation-delay:.1s;}
+  section:nth-of-type(2){animation-delay:.2s;}
+  section:nth-of-type(3){animation-delay:.3s;}
+  section:nth-of-type(4){animation-delay:.4s;}
+
+  @keyframes fadeUp{
+    from{opacity:0;transform:translateY(24px);}
+    to{opacity:1;transform:translateY(0);}
+  }
+
+  /* Payment Cards */
+  .pay-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:20px;
+  }
+  .pay-card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:26px 22px;
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+    position:relative;overflow:hidden;
+    transition:transform .4s var(--ease), box-shadow .4s var(--ease), border-color .4s var(--ease);
+  }
+  .pay-card::before{
+    content:'';position:absolute;inset:0;
+    background:radial-gradient(circle at 50% 0%, var(--accent) 0%, transparent 60%);
+    opacity:0;transition:opacity .4s var(--ease);
+    pointer-events:none;
+  }
+  .pay-card:hover{
+    transform:translateY(-8px);
+    border-color:var(--accent);
+    box-shadow:0 20px 50px -10px color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+  .pay-card:hover::before{opacity:.14;}
+  .pay-card.easypaisa{--accent:var(--easypaisa);}
+  .pay-card.jazzcash{--accent:var(--jazzcash);}
+  .pay-card.hbl{--accent:var(--hbl);}
+
+  .pay-icon{
+    width:50px;height:50px;border-radius:14px;
+    display:flex;align-items:center;justify-content:center;
+    background:color-mix(in srgb, var(--accent) 18%, transparent);
+    border:1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+    color:var(--accent);font-size:20px;margin-bottom:16px;
+    transition:transform .4s var(--ease);
+  }
+  .pay-card:hover .pay-icon{transform:scale(1.1) rotate(-4deg);}
+
+  .pay-card h3{font-family:'Poppins',sans-serif;font-size:18px;font-weight:700;margin-bottom:3px;}
+  .pay-card .acc-name{color:var(--text-3);font-size:13px;margin-bottom:18px;}
+
+  .field-row{
+    display:flex;align-items:center;justify-content:space-between;
+    background:rgba(255,255,255,0.04);
+    border:1px solid var(--border);
+    border-radius:12px;padding:11px 13px;margin-bottom:8px;
+  }
+  .field-row .fmeta{display:flex;flex-direction:column;gap:2px;overflow:hidden;}
+  .field-row .flabel{font-size:10.5px;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;}
+  .field-row .fval{font-size:13.5px;font-weight:600;font-family:'Inter',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .copy-btn{
+    flex-shrink:0;width:32px;height:32px;border-radius:9px;border:none;cursor:pointer;
+    background:color-mix(in srgb, var(--accent) 20%, transparent);
+    color:var(--accent);display:flex;align-items:center;justify-content:center;
+    transition:all .25s var(--ease);margin-left:10px;
+  }
+  .copy-btn:hover{background:var(--accent);color:#fff;transform:scale(1.08);}
+  .copy-btn.copied{background:var(--accent);color:#fff;}
+
+  .bank-style{
+    display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--text-3);
+    margin-top:10px;
+  }
+
+  /* Upload Section */
+  .upload-box{
+    border:2px dashed var(--border);
+    border-radius:var(--radius);
+    background:var(--card);
+    backdrop-filter:blur(18px);
+    padding:48px 24px;
+    text-align:center;
+    cursor:pointer;
+    transition:all .35s var(--ease);
+    position:relative;
+    animation:borderPulse 3s ease-in-out infinite;
+  }
+  @keyframes borderPulse{
+    0%,100%{border-color:var(--border);}
+    50%{border-color:rgba(124,58,237,0.45);}
+  }
+  .upload-box:hover, .upload-box.dragover{
+    border-color:var(--grad-2);
+    background:var(--card-hover);
+    transform:scale(1.005);
+  }
+  .upload-box.dragover{animation:none;box-shadow:0 0 0 6px rgba(124,58,237,.12);}
+  .upload-icon{
+    width:70px;height:70px;border-radius:50%;
+    background:linear-gradient(135deg,var(--grad-1),var(--grad-2));
+    display:flex;align-items:center;justify-content:center;
+    font-size:26px;margin:0 auto 18px;
+    animation:pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{box-shadow:0 0 0 0 rgba(124,58,237,.35);}
+    50%{box-shadow:0 0 0 14px rgba(124,58,237,0);}
+  }
+  .upload-box h4{font-size:16px;font-weight:600;margin-bottom:6px;}
+  .upload-box .sub{color:var(--text-3);font-size:13px;margin-bottom:18px;}
+  .or-divider{color:var(--text-3);font-size:12px;margin:14px 0;letter-spacing:.1em;}
+  .browse-btn{
+    display:inline-flex;align-items:center;gap:8px;
+    background:rgba(255,255,255,0.08);border:1px solid var(--border);
+    color:var(--text);padding:11px 22px;border-radius:12px;
+    font-size:14px;font-weight:600;cursor:pointer;transition:all .25s var(--ease);
+  }
+  .browse-btn:hover{background:rgba(255,255,255,0.14);border-color:rgba(255,255,255,0.3);}
+  .file-hint{color:var(--text-3);font-size:11.5px;margin-top:16px;}
+
+  .preview-card{
+    display:none;align-items:center;gap:16px;
+    background:var(--card);border:1px solid var(--border);
+    border-radius:var(--radius-sm);padding:14px;margin-top:14px;
+    animation:fadeUp .4s var(--ease);
+  }
+  .preview-card.show{display:flex;}
+  .preview-card img{width:64px;height:64px;object-fit:cover;border-radius:10px;flex-shrink:0;}
+  .preview-card .pdf-icon{
+    width:64px;height:64px;border-radius:10px;flex-shrink:0;
+    background:rgba(239,68,68,0.15);color:#ef4444;
+    display:flex;align-items:center;justify-content:center;font-size:24px;
+  }
+  .preview-meta{flex:1;min-width:0;}
+  .preview-meta .pname{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .preview-meta .psize{font-size:12px;color:var(--text-3);margin-top:2px;}
+  .remove-btn{
+    width:34px;height:34px;border-radius:10px;border:none;cursor:pointer;flex-shrink:0;
+    background:rgba(239,68,68,0.15);color:#ef4444;display:flex;align-items:center;justify-content:center;
+    transition:all .25s var(--ease);
+  }
+  .remove-btn:hover{background:#ef4444;color:#fff;}
+
+  .progress-track{width:100%;height:10px;background:rgba(255,255,255,0.04);border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.04)}
+  .progress-bar{height:100%;width:0%;background:linear-gradient(90deg,#7C3AED,#2563EB);transition:width .25s ease}
+
+  /* Form */
+  .form-card{
+    background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+    backdrop-filter:blur(18px);padding:30px;
+  }
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  .form-group{position:relative;grid-column:span 1;}
+  .form-group.full{grid-column:span 2;}
+  .form-group i.ficon{
+    position:absolute;left:16px;top:50%;transform:translateY(-50%);
+    color:var(--text-3);font-size:14px;transition:color .3s var(--ease);pointer-events:none;
+  }
+  .form-group input, .form-group textarea{
+    width:100%;background:rgba(255,255,255,0.05);
+    border:1px solid var(--border);border-radius:12px;
+    padding:18px 16px 8px 42px;color:var(--text);font-size:14.5px;font-family:'Inter',sans-serif;
+    transition:all .3s var(--ease);outline:none;
+  }
+  .form-group textarea{padding-top:24px;resize:vertical;min-height:90px;}
+  .form-group label{
+    position:absolute;left:42px;top:18px;color:var(--text-3);font-size:14.5px;
+    pointer-events:none;transition:all .25s var(--ease);
+  }
+  .form-group input:focus, .form-group textarea:focus{
+    border-color:var(--grad-1);
+    background:rgba(37,99,235,0.06);
+    box-shadow:0 0 0 4px rgba(37,99,235,0.12);
+  }
+  .form-group input:focus ~ i.ficon, .form-group textarea:focus ~ i.ficon{color:var(--grad-1);}
+  .form-group input:focus ~ label, .form-group input:not(:placeholder-shown) ~ label,
+  .form-group textarea:focus ~ label, .form-group textarea:not(:placeholder-shown) ~ label{
+    top:7px;font-size:10.5px;color:var(--grad-1);font-weight:600;letter-spacing:.03em;
+  }
+  .form-group textarea:focus ~ i.ficon, .form-group textarea:not(:placeholder-shown) ~ i.ficon{top:24px;}
+  .err-msg{
+    display:none;color:#ef4444;font-size:12px;margin-top:6px;margin-left:4px;
+    align-items:center;gap:6px;
+  }
+  .form-group.invalid input, .form-group.invalid textarea{border-color:#ef4444;background:rgba(239,68,68,0.06);}
+  .form-group.invalid .err-msg{display:flex;}
+
+  /* Notice card */
+  .notice-card{
+    background:linear-gradient(135deg, rgba(37,99,235,0.10), rgba(124,58,237,0.08));
+    border:1px solid rgba(124,58,237,0.28);
+    border-radius:var(--radius);padding:24px 26px;
+    display:flex;gap:16px;
+  }
+  .notice-card .nicon{
+    width:42px;height:42px;border-radius:12px;flex-shrink:0;
+    background:rgba(124,58,237,0.2);color:#a78bfa;
+    display:flex;align-items:center;justify-content:center;font-size:17px;
+  }
+  .notice-card h4{font-size:15.5px;font-weight:700;margin-bottom:10px;}
+  .notice-card ul{list-style:none;display:flex;flex-direction:column;gap:8px;}
+  .notice-card li{
+    font-size:13.5px;color:var(--text-2);line-height:1.5;
+    display:flex;gap:9px;align-items:flex-start;
+  }
+  .notice-card li::before{
+    content:'';width:5px;height:5px;border-radius:50%;background:#a78bfa;
+    margin-top:7px;flex-shrink:0;
+  }
+
+  /* Submit button */
+  .submit-btn{
+    width:100%;padding:19px;border:none;border-radius:16px;cursor:pointer;
+    background:linear-gradient(135deg,var(--grad-1),var(--grad-2));
+    background-size:200% 200%;
+    color:#fff;font-size:16px;font-weight:700;font-family:'Poppins',sans-serif;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    position:relative;overflow:hidden;
+    transition:transform .3s var(--ease), box-shadow .3s var(--ease), background-position .6s ease;
+    box-shadow:0 10px 30px -8px rgba(124,58,237,0.5);
+  }
+  .submit-btn:hover{
+    transform:translateY(-3px) scale(1.005);
+    background-position:100% 50%;
+    box-shadow:0 16px 40px -8px rgba(124,58,237,0.65);
+  }
+  .submit-btn:active{transform:translateY(-1px) scale(0.99);}
+  .submit-btn:disabled{opacity:.75;cursor:not-allowed;transform:none;}
+  .submit-btn::after{
+    content:'';position:absolute;top:0;left:-60%;width:50%;height:100%;
+    background:linear-gradient(120deg, transparent, rgba(255,255,255,0.35), transparent);
+    transform:skewX(-20deg);animation:shine 3.2s ease-in-out infinite;
+  }
+  @keyframes shine{
+    0%{left:-60%;} 45%{left:130%;} 100%{left:130%;}
+  }
+  .ripple{
+    position:absolute;border-radius:50%;background:rgba(255,255,255,0.55);
+    transform:scale(0);animation:rippleAnim .6s ease-out;pointer-events:none;
+  }
+  @keyframes rippleAnim{to{transform:scale(3);opacity:0;}}
+
+  .spinner{
+    width:18px;height:18px;border:2.5px solid rgba(255,255,255,0.35);
+    border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none;
+  }
+  .submit-btn.loading .btn-label{display:none;}
+  .submit-btn.loading .spinner{display:inline-block;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* Toast */
+  .toast{
+    position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:#111827;border:1px solid var(--border);
+    color:#fff;padding:13px 22px;border-radius:12px;font-size:13.5px;font-weight:500;
+    display:flex;align-items:center;gap:10px;z-index:999;
+    opacity:0;pointer-events:none;transition:all .35s var(--ease);
+    box-shadow:0 12px 30px rgba(0,0,0,0.4);
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto;}
+  .toast i{color:var(--easypaisa);}
+
+  /* Modal */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(5,8,16,0.75);
+    backdrop-filter:blur(6px);z-index:1000;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+    opacity:0;pointer-events:none;transition:opacity .35s var(--ease);
+  }
+  .modal-overlay.show{opacity:1;pointer-events:auto;}
+  .modal-card{
+    background:linear-gradient(180deg, #131b2e, #0d1424);
+    border:1px solid var(--border);border-radius:24px;
+    padding:44px 36px;max-width:420px;width:100%;text-align:center;
+    transform:scale(.85) translateY(30px);transition:transform .45s var(--ease);
+    position:relative;overflow:hidden;
+  }
+  .modal-overlay.show .modal-card{transform:scale(1) translateY(0);}
+  .success-icon{
+    width:88px;height:88px;border-radius:50%;margin:0 auto 22px;
+    background:rgba(34,197,94,0.15);
+    display:flex;align-items:center;justify-content:center;position:relative;
+  }
+  .success-icon svg{width:46px;height:46px;}
+  .success-icon .circle{
+    stroke:var(--easypaisa);stroke-width:3;fill:none;
+    stroke-dasharray:166;stroke-dashoffset:166;
+    animation:circleDraw .6s ease forwards .1s;
+  }
+  .success-icon .check{
+    stroke:var(--easypaisa);stroke-width:3.5;fill:none;stroke-linecap:round;stroke-linejoin:round;
+    stroke-dasharray:48;stroke-dashoffset:48;
+    animation:checkDraw .4s ease forwards .6s;
+  }
+  @keyframes circleDraw{to{stroke-dashoffset:0;}}
+  @keyframes checkDraw{to{stroke-dashoffset:0;}}
+  .modal-card h3{font-family:'Poppins',sans-serif;font-size:22px;font-weight:700;margin-bottom:12px;}
+  .modal-card p{color:var(--text-2);font-size:14px;line-height:1.65;margin-bottom:6px;}
+  .modal-actions{display:flex;gap:12px;margin-top:26px;}
+  .modal-btn{
+    flex:1;padding:13px;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;
+    transition:all .25s var(--ease);border:1px solid var(--border);
+  }
+  .modal-btn.ghost{background:transparent;color:var(--text-2);}
+  .modal-btn.ghost:hover{background:rgba(255,255,255,0.06);color:#fff;}
+  .modal-btn.solid{background:linear-gradient(135deg,var(--grad-1),var(--grad-2));color:#fff;border:none;}
+  .modal-btn.solid:hover{transform:translateY(-2px);}
+
+  .confetti-piece{
+    position:absolute;top:-10px;width:8px;height:14px;opacity:0.9;
+    animation:confettiFall linear forwards;
+  }
+  @keyframes confettiFall{
+    to{transform:translateY(500px) rotate(540deg);opacity:0;}
+  }
+
+  /* Responsive */
+  @media (max-width:900px){
+    .pay-grid{grid-template-columns:repeat(2,1fr);}
+  }
+  @media (max-width:640px){
+    .wrap{padding:44px 16px 80px;}
+    .pay-grid{grid-template-columns:1fr;}
+    .form-grid{grid-template-columns:1fr;}
+    .form-group.full{grid-column:span 1;}
+    .form-card{padding:22px 18px;}
+    .modal-actions{flex-direction:column;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important;animation-iteration-count:1 !important;transition-duration:0.001ms !important;}
+  }
+
+  :focus-visible{outline:2px solid var(--grad-1);outline-offset:2px;}
+</style>
+</head>
+<body>
+
+<div class="bg-shapes">
+  <div class="shape s1"></div>
+  <div class="shape s2"></div>
+  <div class="shape s3"></div>
+  <div class="shape s4"></div>
+</div>
+
+<div class="wrap">
+
+  <header>
+    <span class="eyebrow"><i class="fa-solid fa-shield-halved"></i> Secure Checkout</span>
+    <h1>Complete Your Payment</h1>
+    <p>Upload your payment proof and complete your course registration.</p>
+  </header>
+
+  <!-- Payment Methods -->
+  <section>
+    <div class="section-title">
+      <span class="num">1</span>
+      <div>
+        <h2>Choose a Payment Method</h2>
+        <p>Transfer to any account below, then upload your receipt.</p>
+      </div>
+    </div>
+
+    <div class="pay-grid">
+
+      <div class="pay-card easypaisa">
+        <div class="pay-icon"><i class="fa-solid fa-wallet"></i></div>
+        <h3>EasyPaisa</h3>
+        <div class="acc-name">Digital Skills Academy</div>
+        <div class="field-row">
+          <div class="fmeta">
+            <span class="flabel">Phone Number</span>
+            <span class="fval">0312-3456789</span>
+          </div>
+          <button class="copy-btn" data-copy="0312-3456789" aria-label="Copy EasyPaisa number"><i class="fa-solid fa-copy"></i></button>
+        </div>
+      </div>
+
+      <div class="pay-card jazzcash">
+        <div class="pay-icon"><i class="fa-solid fa-money-bill-wave"></i></div>
+        <h3>JazzCash</h3>
+        <div class="acc-name">Digital Skills Academy</div>
+        <div class="field-row">
+          <div class="fmeta">
+            <span class="flabel">Phone Number</span>
+            <span class="fval">0300-1234567</span>
+          </div>
+          <button class="copy-btn" data-copy="0300-1234567" aria-label="Copy JazzCash number"><i class="fa-solid fa-copy"></i></button>
+        </div>
+      </div>
+
+      <div class="pay-card hbl">
+        <div class="pay-icon"><i class="fa-solid fa-building-columns"></i></div>
+        <h3>HBL Bank</h3>
+        <div class="acc-name">Digital Skills Academy</div>
+        <div class="field-row">
+          <div class="fmeta">
+            <span class="flabel">Account Number</span>
+            <span class="fval">1234567890123456</span>
+          </div>
+          <button class="copy-btn" data-copy="1234567890123456" aria-label="Copy HBL account number"><i class="fa-solid fa-copy"></i></button>
+        </div>
+        <div class="field-row">
+          <div class="fmeta">
+            <span class="flabel">IBAN</span>
+            <span class="fval">PK12HABB0001234567890123</span>
+          </div>
+          <button class="copy-btn" data-copy="PK12HABB0001234567890123" aria-label="Copy IBAN"><i class="fa-solid fa-copy"></i></button>
+        </div>
+        <div class="bank-style"><i class="fa-solid fa-lock"></i> Bank-verified transfer</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Upload -->
+  <section>
+    <div class="section-title">
+      <span class="num">2</span>
+      <div>
+        <h2>Upload Payment Proof</h2>
+        <p>Upload a clear screenshot or photo of your payment receipt.</p>
+      </div>
+    </div>
+
+    <div class="upload-box" id="uploadBox" tabindex="0" role="button" aria-label="Upload payment screenshot">
+      <div class="upload-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+      <h4>Drag &amp; Drop your payment screenshot here</h4>
+      <div class="sub">JPG, PNG, JPEG or PDF — max 10 MB</div>
+      <div class="or-divider">OR</div>
+      <button class="browse-btn" type="button" id="browseBtn"><i class="fa-solid fa-image"></i> Browse Files</button>
+      <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.pdf" hidden>
+      <div class="file-hint">Accepted formats: JPG, PNG, JPEG, PDF · Maximum size 10 MB</div>
+    </div>
+    <div class="err-msg" id="fileErr" style="justify-content:center;margin-top:10px;"><i class="fa-solid fa-circle-exclamation"></i><span></span></div>
+
+    <div class="preview-card" id="previewCard">
+      <img id="previewImg" src="" alt="Payment screenshot preview" style="display:none;">
+      <div class="pdf-icon" id="previewPdf" style="display:none;"><i class="fa-solid fa-file-pdf"></i></div>
+      <div class="preview-meta">
+        <div class="pname" id="previewName"></div>
+        <div class="psize" id="previewSize"></div>
+      </div>
+      <button class="remove-btn" id="removeBtn" aria-label="Remove file"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="uploadProgress" class="progress-track" style="display:none;margin-top:12px;">
+      <div id="uploadProgressBar" class="progress-bar" style="width:0%"></div>
+    </div>
+  </section>
+
+  <!-- Student info -->
+  <section>
+    <div class="section-title">
+      <span class="num">3</span>
+      <div>
+        <h2>Student Information</h2>
+        <p>Tell us who this payment belongs to.</p>
+      </div>
+    </div>
+
+    <form class="form-card" id="paymentForm" novalidate>
+      <div class="form-grid">
+
+        <div class="form-group full">
+          <input type="text" id="fullName" placeholder=" " required>
+          <i class="fa-solid fa-user ficon"></i>
+          <label for="fullName">Full Name</label>
+          <div class="err-msg"><i class="fa-solid fa-circle-exclamation"></i><span>Please enter your full name</span></div>
+        </div>
+
+        <div class="form-group">
+          <input type="email" id="email" placeholder=" " required>
+          <i class="fa-solid fa-envelope ficon"></i>
+          <label for="email">Email Address</label>
+          <div class="err-msg"><i class="fa-solid fa-circle-exclamation"></i><span>Please enter a valid email</span></div>
+        </div>
+
+        <div class="form-group">
+          <input type="tel" id="phone" placeholder=" " required>
+          <i class="fa-solid fa-phone ficon"></i>
+          <label for="phone">Phone Number</label>
+          <div class="err-msg"><i class="fa-solid fa-circle-exclamation"></i><span>Please enter a valid phone number</span></div>
+        </div>
+
+        <div class="form-group full">
+          <input type="text" id="txnId" placeholder=" " required>
+          <i class="fa-solid fa-hashtag ficon"></i>
+          <label for="txnId">Transaction ID / Reference Number</label>
+          <div class="err-msg"><i class="fa-solid fa-circle-exclamation"></i><span>Please enter your transaction ID</span></div>
+        </div>
+
+        <div class="form-group full">
+          <textarea id="note" placeholder=" "></textarea>
+          <i class="fa-solid fa-note-sticky ficon"></i>
+          <label for="note">Optional Note</label>
+        </div>
+
+      </div>
+    </form>
+  </section>
+
+  <!-- Notice -->
+  <section>
+    <div class="notice-card">
+      <div class="nicon"><i class="fa-solid fa-circle-info"></i></div>
+      <div>
+        <h4>Important</h4>
+        <ul>
+          <li>Transfer the exact course fee.</li>
+          <li>Upload a clear payment screenshot.</li>
+          <li>Keep your transaction ID safe.</li>
+          <li>Verification usually takes 5–30 minutes.</li>
+          <li>You will receive confirmation via Email or WhatsApp.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Submit -->
+  <section>
+    <button type="button" class="submit-btn" id="submitBtn">
+      <span class="btn-label"><i class="fa-solid fa-lock"></i> Submit Payment</span>
+      <span class="spinner"></span>
+      <span class="loading-label" style="display:none;">Submitting...</span>
+    </button>
+  </section>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastMsg">Copied to clipboard</span></div>
+
+<!-- Success Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-card" id="modalCard">
+    <div class="success-icon">
+      <svg viewBox="0 0 52 52">
+        <circle class="circle" cx="26" cy="26" r="23"></circle>
+        <path class="check" d="M15 27l7 7 15-15"></path>
+      </svg>
+    </div>
+    <h3>Payment Submitted Successfully</h3>
+    <p>Your payment proof has been received successfully.</p>
+    <p>Our team will verify your payment shortly.</p>
+    <p>You will receive confirmation via Email or WhatsApp.</p>
+    <div class="modal-actions">
+      <button class="modal-btn ghost" id="backHomeBtn">Back to Home</button>
+      <button class="modal-btn solid" id="viewDashBtn">View Dashboard</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ---------- Copy to clipboard ---------- */
+  const toast = document.getElementById('toast');
+  const toastMsg = document.getElementById('toastMsg');
+  let toastTimer;
+  function showToast(msg){
+    toastMsg.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=> toast.classList.remove('show'), 2200);
+  }
+
+  document.querySelectorAll('.copy-btn').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const value = btn.getAttribute('data-copy');
+      try{
+        await navigator.clipboard.writeText(value);
+      }catch(e){
+        const ta = document.createElement('textarea');
+        ta.value = value; document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); document.body.removeChild(ta);
+      }
+      btn.classList.add('copied');
+      const icon = btn.querySelector('i');
+      icon.className = 'fa-solid fa-check';
+      showToast('Copied: ' + value);
+      setTimeout(()=>{
+        btn.classList.remove('copied');
+        icon.className = 'fa-solid fa-copy';
+      }, 1600);
+    });
+  });
+
+  /* ---------- File upload ---------- */
+  const uploadBox = document.getElementById('uploadBox');
+  const fileInput = document.getElementById('fileInput');
+  const browseBtn = document.getElementById('browseBtn');
+  const fileErr = document.getElementById('fileErr');
+  const previewCard = document.getElementById('previewCard');
+  const previewImg = document.getElementById('previewImg');
+  const previewPdf = document.getElementById('previewPdf');
+  const previewName = document.getElementById('previewName');
+  const previewSize = document.getElementById('previewSize');
+  const removeBtn = document.getElementById('removeBtn');
+
+  const ALLOWED = ['image/jpeg','image/jpg','image/png','application/pdf'];
+  const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+  let selectedFile = null;
+
+  function fmtSize(bytes){
+    if(bytes < 1024) return bytes + ' B';
+    if(bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+    return (bytes/(1024*1024)).toFixed(2) + ' MB';
+  }
+
+  function showFileErr(msg){
+    fileErr.querySelector('span').textContent = msg;
+    fileErr.style.display = 'flex';
+    setTimeout(()=>{ fileErr.style.display = 'none'; }, 3500);
+  }
+
+  function handleFile(file){
+    if(!file) return;
+    if(!ALLOWED.includes(file.type)){
+      showFileErr('Unsupported file type. Please upload JPG, PNG, JPEG or PDF.');
+      return;
+    }
+    if(file.size > MAX_SIZE){
+      showFileErr('File too large. Maximum allowed size is 10 MB.');
+      return;
+    }
+    selectedFile = file;
+    previewName.textContent = file.name;
+    previewSize.textContent = fmtSize(file.size);
+
+    if(file.type === 'application/pdf'){
+      previewImg.style.display = 'none';
+      previewPdf.style.display = 'flex';
+    }else{
+      const reader = new FileReader();
+      reader.onload = e=>{
+        previewImg.src = e.target.result;
+        previewImg.style.display = 'block';
+        previewPdf.style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+    }
+    previewCard.classList.add('show');
+    uploadBox.style.display = 'none';
+  }
+
+  browseBtn.addEventListener('click', e=>{ e.stopPropagation(); fileInput.click(); });
+  uploadBox.addEventListener('click', ()=> fileInput.click());
+  uploadBox.addEventListener('keydown', e=>{
+    if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); fileInput.click(); }
+  });
+  fileInput.addEventListener('change', e=> handleFile(e.target.files[0]));
+
+  ['dragenter','dragover'].forEach(evt=>{
+    uploadBox.addEventListener(evt, e=>{
+      e.preventDefault(); e.stopPropagation();
+      uploadBox.classList.add('dragover');
+    });
+  });
+  ['dragleave','drop'].forEach(evt=>{
+    uploadBox.addEventListener(evt, e=>{
+      e.preventDefault(); e.stopPropagation();
+      uploadBox.classList.remove('dragover');
+    });
+  });
+  uploadBox.addEventListener('drop', e=>{
+    const file = e.dataTransfer.files[0];
+    handleFile(file);
+  });
+
+  removeBtn.addEventListener('click', ()=>{
+    selectedFile = null;
+    fileInput.value = '';
+    previewCard.classList.remove('show');
+    uploadBox.style.display = 'block';
+  });
+
+  /* ---------- Form validation ---------- */
+  const fullName = document.getElementById('fullName');
+  const email = document.getElementById('email');
+  const phone = document.getElementById('phone');
+  const txnId = document.getElementById('txnId');
+
+  function setInvalid(group, invalid){
+    group.classList.toggle('invalid', invalid);
+  }
+
+  function validateField(input){
+    const group = input.closest('.form-group');
+    let valid = true;
+    if(input === fullName){
+      valid = fullName.value.trim().length >= 3;
+    }else if(input === email){
+      valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim());
+    }else if(input === phone){
+      valid = /^[0-9+\-\s]{7,15}$/.test(phone.value.trim());
+    }else if(input === txnId){
+      valid = txnId.value.trim().length >= 3;
+    }
+    setInvalid(group, !valid);
+    return valid;
+  }
+
+  [fullName, email, phone, txnId].forEach(inp=>{
+    inp.addEventListener('blur', ()=> validateField(inp));
+    inp.addEventListener('input', ()=>{
+      if(inp.closest('.form-group').classList.contains('invalid')) validateField(inp);
+    });
+  });
+
+  function validateForm(){
+    let ok = true;
+    [fullName, email, phone, txnId].forEach(inp=>{
+      if(!validateField(inp)) ok = false;
+    });
+    if(!selectedFile){
+      showFileErr('Please upload your payment screenshot before submitting.');
+      uploadBox.scrollIntoView({behavior:'smooth', block:'center'});
+      ok = false;
+    }
+    return ok;
+  }
+
+  /* ---------- Ripple effect ---------- */
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.addEventListener('click', function(e){
+    const rect = submitBtn.getBoundingClientRect();
+    const ripple = document.createElement('span');
+    const size = Math.max(rect.width, rect.height);
+    ripple.className = 'ripple';
+    ripple.style.width = ripple.style.height = size + 'px';
+    ripple.style.left = (e.clientX - rect.left - size/2) + 'px';
+    ripple.style.top = (e.clientY - rect.top - size/2) + 'px';
+    submitBtn.appendChild(ripple);
+    setTimeout(()=> ripple.remove(), 650);
+  });
+
+  /* ---------- Submit flow ---------- */
+  const modalOverlay = document.getElementById('modalOverlay');
+  const backHomeBtn = document.getElementById('backHomeBtn');
+  const viewDashBtn = document.getElementById('viewDashBtn');
+
+  function launchConfetti(){
+    const colors = ['#2563EB','#7C3AED','#22C55E','#EF4444','#FBBF24'];
+    const modalCard = document.getElementById('modalCard');
+    for(let i=0;i<40;i++){
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      piece.style.left = Math.random()*100 + '%';
+      piece.style.background = colors[Math.floor(Math.random()*colors.length)];
+      piece.style.animationDuration = (1.6 + Math.random()*1.4) + 's';
+      piece.style.animationDelay = (Math.random()*0.4) + 's';
+      piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+      modalCard.appendChild(piece);
+      setTimeout(()=> piece.remove(), 3200);
+    }
+  }
+
+  function openModal(){
+    modalOverlay.classList.add('show');
+    launchConfetti();
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal(){
+    modalOverlay.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+
+  backHomeBtn.addEventListener('click', closeModal);
+  viewDashBtn.addEventListener('click', closeModal);
+  modalOverlay.addEventListener('click', e=>{
+    if(e.target === modalOverlay) closeModal();
+  });
+
+    // Submit handled by module script `js/payment-submit.js` to perform Cloudinary upload and Firestore save.
+})();
+</script>
+<script type="module" src="../js/payment-submit.js"></script>
+
+</body>
+</html>

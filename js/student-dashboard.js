@@ -14,24 +14,24 @@ const navItems = [
 ];
 
 const contentMap = {
-  dashboard: `<div class="stats-grid"><div class="card"><h3>Current Course</h3><p class="muted">Shopify Store Setup</p></div><div class="card"><h3>Assigned Tasks</h3><p class="muted">Pending task list</p></div><div class="card"><h3>Upcoming Session</h3><p class="muted">Live class tomorrow</p></div><div class="card"><h3>Payment</h3><p class="muted">Upload your proof below</p></div></div>`,
-  profile: `<div class="card"><h3>Profile</h3><p class="muted">Name: Ayesha Khan</p><p class="muted">Email: ayesha@example.com</p><p class="muted">Phone: +92 300 1234567</p></div>`,
-  course: `<div class="card"><h3>Current Course</h3><p class="muted">Shopify Crash Course — Module 3: Conversion Growth</p></div>`,
-  progress: `<div class="card"><h3>Progress</h3><p class="muted">Module 1 Completed</p><p class="muted">Module 2 In Review</p><p class="muted">Module 3 Active</p></div>`,
-  meeting: `<div class="card"><h3>Meeting Link</h3><p class="muted">Join your live mentor session here: <a href="#">https://meet.example.com/mentor</a></p></div>`,
-  resources: `<div class="resource-grid"><div class="card"><h3>Templates</h3><p class="muted">Download store templates</p></div><div class="card"><h3>Guides</h3><p class="muted">Access step-by-step PDFs</p></div></div>`,
-  assignments: `<div class="card"><h3>Assignments</h3><p class="muted">Assignments are listed in the task view.</p></div>`,
-  announcements: `<div class="card"><h3>Announcements</h3><p class="muted">New live session added for this week.</p></div>`,
+  dashboard: null,
+  profile: null,
+  course: null,
+  progress: null,
+  meeting: null,
+  resources: null,
+  assignments: null,
+  announcements: null,
   payment: `<div class="card"><h3>Payment Upload</h3><form id="paymentForm" class="payment-form"><input name="transactionId" placeholder="Transaction ID" required /><select name="paymentMethod" required><option value="">Select payment method</option><option value="Bank Transfer">Bank Transfer</option><option value="JazzCash">JazzCash</option><option value="EasyPaisa">EasyPaisa</option><option value="Card">Card</option></select><input type="date" name="uploadDate" required /><select name="paymentStatus"><option value="Pending">Pending</option><option value="Verified">Verified</option><option value="Rejected">Rejected</option></select><input type="file" name="screenshot" accept="image/*" required /><button type="submit">Upload Payment</button><div class="progress-track" id="progressTrack"><span id="progressBar"></span></div><div class="status" id="paymentStatus"></div></form></div>`,
   logout: `<div class="card"><h3>Logged Out</h3><p class="muted">You have successfully signed out.</p></div>`
 };
 
 import { uploadPayment } from './payment.js';
-import { getAuthState, initAuth } from './auth.js';
+import { getAuthState, initAuth, requireAuth } from './auth.js';
 import { fetchTasksForStudent, markTaskCompleted } from './tasks.js';
 import { fetchStudentProgress } from './progress.js';
 import { fetchVisibleMeetingLink } from './meetings.js';
-import { readDocs } from './firestore.js';
+import { readDocs, listenDocs, readDoc } from './firestore.js';
 
 const navList = document.getElementById('navList');
 const contentArea = document.getElementById('contentArea');
@@ -39,7 +39,11 @@ const pageTitle = document.getElementById('pageTitle');
 const themeToggle = document.getElementById('themeToggle');
 
 function renderNav() {
-  navList.innerHTML = navItems.map((item) => `<button class="nav-item${item.id === 'dashboard' ? ' active' : ''}" data-id="${item.id}"><span>${item.icon} ${item.label}</span></button>`).join('');
+  navList.innerHTML = navItems.map((item) => `
+    <button class="nav-item${item.id === 'dashboard' ? ' active' : ''}" data-id="${item.id}" aria-label="${item.label}" title="${item.label}">
+      <span>${item.icon} ${item.label}</span>
+    </button>
+  `).join('');
 }
 
 async function renderTasksView(mode = 'tasks') {
@@ -80,11 +84,40 @@ async function renderProgressView() {
 
 async function renderMeetingView() {
   const state = getAuthState();
-  const link = await fetchVisibleMeetingLink(state.user?.uid || '');
+  const student = await readDoc('students', state.user?.uid || '');
+  const meetings = await readDocs('meetingLinks');
+  
+  // Filter meetings based on student's learning mode and audience
+  const filteredMeetings = meetings.filter(meeting => {
+    // Check learning mode filter
+    const learningModeMatch = !meeting.learningMode || 
+      meeting.learningMode === 'Both' || 
+      meeting.learningMode === student?.learningMode;
+    
+    // Check audience filter
+    const audienceMatch = !meeting.audience || 
+      meeting.audience === 'all' ||
+      (meeting.audience === 'online' && student?.learningMode === 'Online') ||
+      (meeting.audience === 'physical' && student?.learningMode === 'Physical');
+    
+    return learningModeMatch && audienceMatch;
+  });
+
   contentArea.innerHTML = `
     <div class="card">
-      <h3>Latest Meeting Link</h3>
-      ${link ? `<p><a href="${link.url}" target="_blank" rel="noreferrer">${link.title} • ${link.platform}</a></p>` : '<p class="muted">No active meeting link is available yet.</p>'}
+      <h3>Meeting Links</h3>
+      <div class="table-list">
+        ${filteredMeetings.map((meeting) => `
+          <div class="table-item">
+            <div>
+              <strong>${meeting.title || 'Meeting'}</strong>
+              <p class="muted">Date: ${meeting.date || 'TBD'} • Time: ${meeting.time || 'TBD'}</p>
+              <p class="muted">Type: ${meeting.type || 'Online'} • Mode: ${meeting.learningMode || 'All'}</p>
+            </div>
+            <a class="btn btn-secondary" href="${meeting.link}" target="_blank" rel="noreferrer">Join Meeting</a>
+          </div>
+        `).join('') || '<p class="muted">No meeting links available yet.</p>'}
+      </div>
     </div>`;
 }
 
@@ -126,6 +159,112 @@ async function renderAssignmentsView() {
     </div>`;
 }
 
+async function renderDashboardView() {
+  const state = getAuthState();
+  const student = await readDoc('students', state.user?.uid || '');
+  const tasks = await fetchTasksForStudent(state.user?.uid || '');
+  const pendingTasks = tasks.filter(t => !t.completed);
+  const progress = await fetchStudentProgress(state.user?.uid || '');
+
+  // Update hero card
+  const welcomeEl = document.getElementById('welcomeMessage');
+  const heroProgressBar = document.getElementById('heroProgressBar');
+  const heroProgressText = document.getElementById('heroProgressText');
+  if (welcomeEl) welcomeEl.textContent = `Welcome back, ${student?.fullName || state.user?.displayName || 'Student'}`;
+  if (heroProgressBar) heroProgressBar.style.width = `${progress?.percentage || 0}%`;
+  if (heroProgressText) heroProgressText.textContent = `${progress?.percentage || 0}% complete`;
+
+  contentArea.innerHTML = `
+    <div class="stats-grid">
+      <div class="card">
+        <h3>Current Course</h3>
+        <p class="muted">${student?.course || 'Not assigned'}</p>
+      </div>
+      <div class="card">
+        <h3>Assigned Tasks</h3>
+        <p class="muted">${pendingTasks.length} pending</p>
+      </div>
+      <div class="card">
+        <h3>Progress</h3>
+        <p class="muted">${progress?.percentage || 0}% complete</p>
+      </div>
+      <div class="card">
+        <h3>Payment Status</h3>
+        <p class="muted">${student?.paymentStatus || 'Pending'}</p>
+      </div>
+    </div>`;
+}
+
+async function renderProfileView() {
+  const state = getAuthState();
+  const student = await readDoc('students', state.user?.uid || '');
+
+  contentArea.innerHTML = `
+    <div class="card">
+      <h3>Profile</h3>
+      <p class="muted">Name: ${student?.fullName || state.user?.displayName || ''}</p>
+      <p class="muted">Email: ${student?.email || state.user?.email || ''}</p>
+      <p class="muted">Phone: ${student?.phone || ''}</p>
+      <p class="muted">Course: ${student?.course || 'Not selected'}</p>
+      <p class="muted">Learning Mode: ${student?.learningMode || 'Not specified'}</p>
+      <p class="muted">Registration Date: ${student?.createdAt ? new Date(student.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}</p>
+    </div>`;
+}
+
+async function renderCourseView() {
+  const state = getAuthState();
+  const student = await readDoc('students', state.user?.uid || '');
+
+  contentArea.innerHTML = `
+    <div class="card">
+      <h3>Current Course</h3>
+      <p class="muted">${student?.course || 'Not assigned'}</p>
+      <p class="muted">Learning Mode: ${student?.learningMode || 'Not specified'}</p>
+    </div>`;
+}
+
+async function renderAnnouncementsView() {
+  const state = getAuthState();
+  const student = await readDoc('students', state.user?.uid || '');
+  const announcements = await readDocs('announcements');
+
+  // Filter announcements based on student's approval status and learning mode
+  const filteredAnnouncements = announcements.filter(announcement => {
+    // Check audience filter
+    const audienceMatch = !announcement.audience || 
+      announcement.audience === 'all' ||
+      (announcement.audience === 'approved' && student?.approvalStatus === 'approved') ||
+      (announcement.audience === 'online' && student?.learningMode === 'Online') ||
+      (announcement.audience === 'physical' && student?.learningMode === 'Physical');
+    
+    return audienceMatch;
+  });
+
+  // Sort by newest first
+  const sortedAnnouncements = filteredAnnouncements.sort((a, b) => {
+    const aTime = a.createdAt?.seconds || 0;
+    const bTime = b.createdAt?.seconds || 0;
+    return bTime - aTime;
+  });
+
+  contentArea.innerHTML = `
+    <div class="card">
+      <h3>Announcements</h3>
+      <div class="table-list">
+        ${sortedAnnouncements.map((announcement) => `
+          <div class="table-item">
+            <div>
+              <strong>${announcement.title || 'Announcement'}</strong>
+              <p class="muted">${announcement.message || ''}</p>
+              <p class="muted">Priority: ${announcement.priority || 'normal'}</p>
+            </div>
+            <span class="badge">${announcement.createdAt ? new Date(announcement.createdAt.seconds * 1000).toLocaleDateString() : ''}</span>
+          </div>
+        `).join('') || '<p class="muted">No announcements yet.</p>'}
+      </div>
+    </div>`;
+}
+
 async function renderContent(id) {
   pageTitle.textContent = navItems.find((item) => item.id === id)?.label || 'Dashboard';
   if (id === 'tasks' || id === 'completed') {
@@ -148,7 +287,23 @@ async function renderContent(id) {
     await renderAssignmentsView();
     return;
   }
-  contentArea.innerHTML = contentMap[id] || contentMap.dashboard;
+  if (id === 'dashboard') {
+    await renderDashboardView();
+    return;
+  }
+  if (id === 'profile') {
+    await renderProfileView();
+    return;
+  }
+  if (id === 'course') {
+    await renderCourseView();
+    return;
+  }
+  if (id === 'announcements') {
+    await renderAnnouncementsView();
+    return;
+  }
+  contentArea.innerHTML = contentMap[id] || '<div class="card"><p class="muted">Content not available.</p></div>';
   if (id === 'payment') {
     const form = document.getElementById('paymentForm');
     const status = document.getElementById('paymentStatus');
@@ -157,6 +312,7 @@ async function renderContent(id) {
     if (form) {
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
+        const submitBtn = form.querySelector('button[type="submit"]');
         const data = new FormData(form);
         const payload = Object.fromEntries(data.entries());
         const file = data.get('screenshot');
@@ -165,11 +321,12 @@ async function renderContent(id) {
           status.className = 'status error';
           return;
         }
-        status.textContent = 'Uploading...';
-        status.className = 'status';
-        progressTrack.style.display = 'block';
-        progressBar.style.width = '0%';
         try {
+          if (submitBtn) { submitBtn.setAttribute('disabled','disabled'); submitBtn.textContent = 'Uploading...'; }
+          status.textContent = 'Uploading...';
+          status.className = 'status';
+          progressTrack.style.display = 'block';
+          progressBar.style.width = '0%';
           await uploadPayment(payload, file, (percent) => {
             progressBar.style.width = `${percent}%`;
           });
@@ -180,10 +337,58 @@ async function renderContent(id) {
         } catch (error) {
           status.textContent = error.message || 'Upload failed.';
           status.className = 'status error';
+        } finally {
+          if (submitBtn) { submitBtn.removeAttribute('disabled'); submitBtn.textContent = 'Upload Payment'; }
         }
       });
     }
   }
+}
+
+// Load live student profile and payment status
+let studentUnsub = null;
+async function initStudentListeners() {
+  try { if (studentUnsub) studentUnsub(); } catch (e) {}
+  const state = getAuthState();
+  if (!state.user) return;
+  // listen to the student's document
+  studentUnsub = await listenDocs('students', [{ field: 'uid', op: '==', value: state.user.uid }], (docs) => {
+    const student = (docs && docs[0]) || null;
+    if (!student) return;
+    // if not approved, redirect to login/blocked
+    if (student.approvalStatus !== 'approved') {
+      window.location.href = './login.html?status=blocked';
+      return;
+    }
+    // update profile area
+    const profileHtml = `
+      <div class="card">
+        <h3>Profile</h3>
+        <p class="muted">Name: ${escapeHtml(student.fullName || state.user.displayName || '')}</p>
+        <p class="muted">Email: ${escapeHtml(student.email || state.user.email || '')}</p>
+        <p class="muted">Course: ${escapeHtml(student.course || 'Not selected')}</p>
+      </div>`;
+    // if profile section exists, replace it
+    if (document.querySelector('[data-id="profile"]') && pageTitle.textContent === 'Profile') {
+      contentArea.innerHTML = profileHtml;
+    }
+  });
+  // listen for payments for this student and update UI
+  const paymentsUnsub = await listenDocs('payments', [{ field: 'studentId', op: '==', value: state.user.uid }], (docs) => {
+    const latest = (docs && docs[0]) || null;
+    const statusEl = document.getElementById('paymentStatus');
+    if (statusEl) {
+      if (!latest) {
+        statusEl.textContent = 'No payments found.';
+        statusEl.className = 'status muted';
+      } else {
+        statusEl.textContent = `Payment status: ${latest.paymentStatus || latest.status || 'Pending'}`;
+        statusEl.className = `status ${((latest.paymentStatus||'').toLowerCase())}`;
+      }
+    }
+  });
+  // return a combined unsubscribe that cleans both listeners when needed
+  return () => { try { studentUnsub && studentUnsub(); } catch(e){}; try { paymentsUnsub && paymentsUnsub(); } catch(e){}; };
 }
 
 navList.addEventListener('click', async (event) => {
@@ -216,12 +421,16 @@ themeToggle.textContent = savedTheme === 'light' ? '☀' : '☾';
 async function boot() {
   await initAuth();
   const state = getAuthState();
+  if (!requireAuth('student')) {
+    throw new Error('Unauthorized');
+  }
   if (state.role === 'student' && state.approvalStatus !== 'approved') {
-    window.location.href = './login.html?status=blocked';
-    return;
+    // still allow boot but start listeners so we can redirect if status changes
+    // initial redirect handled by listeners
   }
   renderNav();
   await renderContent('dashboard');
+  await initStudentListeners();
 }
 
 boot();

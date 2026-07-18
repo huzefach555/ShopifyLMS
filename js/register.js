@@ -1,4 +1,4 @@
-import { initializeFirebase, registerStudent } from './firebase.js';
+import { initializeFirebase, registerStudent, getFirebaseAuth } from './firebase.js';
 
 const form = document.getElementById('studentForm');
 const message = document.getElementById('formMessage');
@@ -33,12 +33,15 @@ form.addEventListener('submit', async (event) => {
   }
   try {
     await initializeFirebase();
-    const file = data.photo && data.photo.name ? data.photo : null;
-    delete data.photo;
-    const result = await registerStudent({ ...data }, file);
+    const fileInput = form.querySelector('input[name="photo"]');
+    const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+    const payload = { ...data };
+    delete payload.photo;
+    const result = await registerStudent(payload, file);
     setMessage(`Registration successful for ${result.user.email}.`, true);
+    window.location.href = "./pages/payment.html";
     form.reset();
   } catch (error) {
-    setMessage(error.message || 'Registration failed.', false);
+    setMessage((error && (error.message || error.code)) || 'Registration failed.', false);
   }
 });

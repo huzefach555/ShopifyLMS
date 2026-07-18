@@ -40,7 +40,9 @@ export async function getFirebaseStorage() {
 
 export async function signIn(email, password) {
   const authInstance = await getFirebaseAuth();
-  return signInWithEmailAndPassword(authInstance, email, password);
+  const safeEmail = typeof email === 'string' ? email.trim() : String(email || '');
+  const safePassword = typeof password === 'string' ? password : String(password || '');
+  return signInWithEmailAndPassword(authInstance, safeEmail, safePassword);
 }
 
 export async function signOut() {
@@ -60,7 +62,7 @@ export async function registerStudent(payload, file) {
       const response = await uploadToCloudinary(file, `students/${user.uid}`);
       photoURL = response.secure_url || '';
     } catch (err) {
-      console.error('Photo upload failed:', err);
+      // Photo upload failed, continue without photo
     }
   }
   const sanitized = { ...payload };
@@ -74,6 +76,10 @@ export async function registerStudent(payload, file) {
     approvalStatus: 'pending',
     createdAt: serverTimestamp()
   };
-  await setDoc(doc(dbInstance, 'students', user.uid), student);
+  try {
+    await setDoc(doc(dbInstance, 'students', user.uid), student);
+  } catch (err) {
+    throw err;
+  }
   return { user, student };
 }

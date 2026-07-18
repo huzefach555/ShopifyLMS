@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Admins collection: only existing admins may read; only admins can write admins (managed out-of-band)
+    match /admins/{adminId} {
+      allow read: if request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      allow create, update, delete: if request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Students: users can create their own student doc, read their own doc; admins can read and update
+    match /students/{studentId} {
+      allow create: if request.auth != null && request.auth.uid == studentId;
+      allow read: if request.auth != null && (request.auth.uid == studentId || exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+      allow update: if request.auth != null && (request.auth.uid == studentId || exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+      allow delete: if false;
+    }
+
+    // Payments: students can create payment records only for themselves; admins can read and update
+    match /payments/{paymentId} {
+      allow create: if request.auth != null && request.resource.data.studentId == request.auth.uid;
+      allow read: if request.auth != null && (request.auth.uid == resource.data.studentId || exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+      allow update: if request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      allow delete: if false;
+    }
+
+    // Teachers, tasks, assignments, resources: admins and authenticated users can read; writes restricted to admins
+    match /{collection}/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+  }
+}

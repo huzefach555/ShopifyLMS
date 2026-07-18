@@ -1,5 +1,5 @@
 import { getFirebaseDb } from './firebase.js';
-import { collection, addDoc, getDocs, getDoc, updateDoc, deleteDoc, doc, query, orderBy, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+import { collection, addDoc, getDocs, getDoc, updateDoc, deleteDoc, doc, query, orderBy, where, serverTimestamp, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 
 const collections = {
   students: 'students',
@@ -11,7 +11,8 @@ const collections = {
   payments: 'payments',
   meetingLinks: 'meetingLinks',
   resources: 'resources',
-  assignments: 'assignments'
+  assignments: 'assignments',
+  courses: 'courses'
 };
 
 function getCollectionRef(name) {
@@ -29,19 +30,48 @@ export async function createDoc(collectionName, data) {
 }
 
 export async function readDocs(collectionName, filters = []) {
-  const db = await getFirebaseDb();
-  let q = query(collection(db, collections[collectionName]), orderBy('createdAt', 'desc'));
-  filters.forEach((filter) => {
-    q = query(q, where(filter.field, filter.operator, filter.value));
-  });
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
+  try {
+    const db = await getFirebaseDb();
+    let q = query(collection(db, collections[collectionName]), orderBy('createdAt', 'desc'));
+    filters.forEach((filter) => {
+      q = query(q, where(filter.field, filter.operator, filter.value));
+    });
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
+  } catch (err) {
+    // Return empty array if collection doesn't exist or query fails
+    return [];
+  }
+}
+
+export async function listenDocs(collectionName, filters = [], callback) {
+  try {
+    const db = await getFirebaseDb();
+    let q = query(collection(db, collections[collectionName]), orderBy('createdAt', 'desc'));
+    filters.forEach((filter) => {
+      q = query(q, where(filter.field, filter.operator || filter.op, filter.value));
+    });
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
+      try { callback(docs); } catch (err) {}
+    }, (err) => {
+      // Silently handle errors (collection doesn't exist, permission denied, etc.)
+    });
+    return unsubscribe;
+  } catch (err) {
+    // Return a no-op unsubscribe function if listener setup fails
+    return () => {};
+  }
 }
 
 export async function readDoc(collectionName, id) {
-  const db = await getFirebaseDb();
-  const snap = await getDoc(doc(db, collections[collectionName], id));
-  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+  try {
+    const db = await getFirebaseDb();
+    const snap = await getDoc(doc(db, collections[collectionName], id));
+    return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+  } catch (err) {
+    return null;
+  }
 }
 
 export async function updateDocById(collectionName, id, data) {
