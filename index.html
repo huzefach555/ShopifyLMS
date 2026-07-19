@@ -241,6 +241,13 @@
       </footer>
     </div>
 
+    <script>
+      // Theme persistence
+      (function() {
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      })();
+    </script>
     <script defer src="./js/app.js"></script>
     <script type="module">
       import { initializeFirebase } from './js/firebase.js';
@@ -258,19 +265,19 @@
                 <h3>Starter</h3>
                 <p class="price">Rs. 5,000</p>
                 <p>Perfect for first-time store builders.</p>
-                <a class="btn btn-secondary" href="#contact">Reserve Seat</a>
+                <a class="btn btn-secondary" href="./register.html">Reserve Seat</a>
               </article>
               <article class="glass price-card featured">
                 <h3>Pro</h3>
                 <p class="price">Rs. 5,000</p>
                 <p>Includes full access, live coaching, and templates.</p>
-                <a class="btn btn-primary" href="#contact">Join Pro</a>
+                <a class="btn btn-primary" href="./register.html">Join Pro</a>
               </article>
               <article class="glass price-card">
                 <h3>Elite</h3>
                 <p class="price">Rs. 5,000</p>
                 <p>For founders ready for advanced growth support.</p>
-                <a class="btn btn-secondary" href="#contact">Book Strategy Call</a>
+                <a class="btn btn-secondary" href="./register.html">Book Strategy Call</a>
               </article>
             `;
             return;

@@ -1,6 +1,6 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
 import { getAuth, createUserWithEmailAndPassword, updateProfile, signInWithEmailAndPassword, signOut as firebaseSignOut } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js';
-import { getFirestore, doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
+import { getFirestore, doc, setDoc, serverTimestamp, runTransaction, getDoc } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import { getStorage } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-storage.js';
 import { firebaseConfig } from './firebase-config.js';
 import { uploadToCloudinary } from './cloudinary.js';
@@ -50,12 +50,45 @@ export async function signOut() {
   return firebaseSignOut(authInstance);
 }
 
+export async function generateRollNumber() {
+  const dbInstance = await getFirebaseDb();
+  const counterRef = doc(dbInstance, 'counters', 'rollNumber');
+  
+  try {
+    const rollNumber = await runTransaction(dbInstance, async (transaction) => {
+      const counterDoc = await transaction.get(counterRef);
+      let nextNumber = 1;
+      
+      if (counterDoc.exists()) {
+        nextNumber = (counterDoc.data().lastNumber || 0) + 1;
+      }
+      
+      transaction.set(counterRef, { lastNumber: nextNumber });
+      
+      // Format as DSA-XXXX with leading zeros
+      const formattedNumber = String(nextNumber).padStart(4, '0');
+      return `DSA-${formattedNumber}`;
+    });
+    
+    return rollNumber;
+  } catch (error) {
+    console.error('Error generating roll number:', error);
+    // Fallback to timestamp-based if transaction fails
+    const timestamp = Date.now().toString().slice(-4);
+    return `DSA-${timestamp}`;
+  }
+}
+
 export async function registerStudent(payload, file) {
   const authInstance = await getFirebaseAuth();
   const dbInstance = await getFirebaseDb();
   const userCredential = await createUserWithEmailAndPassword(authInstance, payload.email, payload.password);
   const user = userCredential.user;
   await updateProfile(user, { displayName: payload.fullName });
+  
+  // Generate unique roll number
+  const rollNumber = await generateRollNumber();
+  
   let photoURL = '';
   if (file && file.name) {
     try {
@@ -71,6 +104,7 @@ export async function registerStudent(payload, file) {
   const student = {
     ...sanitized,
     uid: user.uid,
+    rollNumber,
     photoURL,
     role: 'student',
     approvalStatus: 'pending',

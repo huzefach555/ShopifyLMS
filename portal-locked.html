@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,16 +7,32 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./css/styles.css" />
     <style>
       :root {
-        --bg: #1a1a1a;
-        --surface: #2d2d2d;
-        --surface-strong: #3d3d3d;
-        --border: #4a4a4a;
+        --bg: #FFFFFF;
+        --surface: rgba(255,255,255,0.9);
+        --surface-strong: #FFFFFF;
+        --border: #E5E7EB;
+        --text: #1a1a1a;
+        --muted: #666666;
+        --primary: #10B981;
+        --primary-rgb: 16, 185, 129;
+        --warning: #f59e0b;
+        --warning-rgb: 245, 158, 11;
+        --danger: #ef4444;
+        --danger-rgb: 239, 68, 68;
+      }
+
+      :root[data-theme="dark"] {
+        --bg: #0B0B0B;
+        --surface: rgba(26,26,26,0.9);
+        --surface-strong: #1A1A1A;
+        --border: #374151;
         --text: #ffffff;
-        --muted: #a0a0a0;
-        --primary: #ff6b35;
-        --primary-rgb: 255, 107, 53;
+        --muted: #A0A0A0;
+        --primary: #F97316;
+        --primary-rgb: 249, 115, 22;
         --warning: #f59e0b;
         --warning-rgb: 245, 158, 11;
         --danger: #ef4444;
@@ -142,6 +158,70 @@
         justify-content: center;
         flex-wrap: wrap;
       }
+
+      @media (max-width: 640px) {
+        body {
+          padding: 1rem;
+        }
+
+        .lock-icon {
+          font-size: 4rem;
+          margin-bottom: 1.5rem;
+        }
+
+        h1 {
+          font-size: 1.5rem;
+        }
+
+        .locked-container {
+          max-width: 100%;
+        }
+
+        .reason-box {
+          padding: 1rem;
+        }
+
+        .btn {
+          padding: 0.65rem 1.25rem;
+          font-size: 0.8rem;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .lock-icon {
+          font-size: 3.5rem;
+        }
+
+        h1 {
+          font-size: 1.25rem;
+        }
+
+        .actions {
+          flex-direction: column;
+        }
+
+        .btn {
+          width: 100%;
+        }
+      }
+
+      @media (max-width: 375px) {
+        body {
+          padding: 0.75rem;
+        }
+
+        .lock-icon {
+          font-size: 3rem;
+        }
+
+        h1 {
+          font-size: 1.1rem;
+        }
+
+        p {
+          font-size: 0.9rem;
+        }
+      }
     </style>
   </head>
   <body>
@@ -193,6 +273,13 @@
         await authLogout();
         window.location.href = './login.html';
       });
+    </script>
+    <script>
+      // Theme persistence
+      (function() {
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      })();
     </script>
   </body>
 </html>

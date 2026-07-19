@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
   <head></head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,16 +7,34 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./css/styles.css" />
     <style>
       :root {
-        --bg: #1a1a1a;
-        --surface: #2d2d2d;
-        --surface-strong: #3d3d3d;
-        --border: #4a4a4a;
+        --bg: #FFFFFF;
+        --surface: rgba(255,255,255,0.9);
+        --surface-strong: #FFFFFF;
+        --border: #E5E7EB;
+        --text: #1a1a1a;
+        --muted: #666666;
+        --primary: #10B981;
+        --primary-rgb: 16, 185, 129;
+        --success: #10b981;
+        --success-rgb: 16, 185, 129;
+        --danger: #ef4444;
+        --danger-rgb: 239, 68, 68;
+        --warning: #f59e0b;
+        --warning-rgb: 245, 158, 11;
+      }
+
+      :root[data-theme="dark"] {
+        --bg: #0B0B0B;
+        --surface: rgba(26,26,26,0.9);
+        --surface-strong: #1A1A1A;
+        --border: #374151;
         --text: #ffffff;
-        --muted: #a0a0a0;
-        --primary: #ff6b35;
-        --primary-rgb: 255, 107, 53;
+        --muted: #A0A0A0;
+        --primary: #F97316;
+        --primary-rgb: 249, 115, 22;
         --success: #10b981;
         --success-rgb: 16, 185, 129;
         --danger: #ef4444;
@@ -518,6 +536,59 @@
           grid-template-columns: 1fr;
         }
       }
+
+      @media (max-width: 640px) {
+        .dashboard-shell {
+          grid-template-columns: 1fr;
+        }
+
+        .sidebar {
+          position: fixed;
+          left: -100%;
+          top: 0;
+          bottom: 0;
+          width: 280px;
+          z-index: 1000;
+          transition: left 0.3s ease;
+        }
+
+        .sidebar.open {
+          left: 0;
+        }
+
+        .menu-toggle {
+          display: block;
+        }
+
+        .stats-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .main-panel {
+          padding: 0.75rem;
+        }
+
+        .stats-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .btn {
+          padding: 0.5rem 1rem;
+          font-size: 0.8rem;
+        }
+      }
+
+      @media (max-width: 375px) {
+        .main-panel {
+          padding: 0.5rem;
+        }
+
+        .card {
+          padding: 0.75rem;
+        }
+      }
     </style>
   </head>
   <body>
@@ -561,6 +632,13 @@
         await authLogout();
         window.location.href = './login.html';
       });
+    </script>
+    <script>
+      // Theme persistence
+      (function() {
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      })();
     </script>
     <script type="module" src="./js/admin-dashboard.js"></script>
   </body>
